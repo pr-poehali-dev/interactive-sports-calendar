@@ -25,6 +25,8 @@ interface Event {
   description: string;
   organizer: string;
   result?: string;
+  approved: boolean;
+  submittedAt: string;
 }
 
 const initialEvents: Event[] = [];
@@ -55,6 +57,9 @@ export default function Index() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
     date: '',
@@ -68,7 +73,10 @@ export default function Index() {
     status: 'upcoming'
   });
 
-  const filteredEvents = events.filter(event => 
+  const approvedEvents = events.filter(event => event.approved);
+  const pendingEvents = events.filter(event => !event.approved);
+  
+  const filteredEvents = approvedEvents.filter(event => 
     selectedSport === 'all' ? true : event.sport === selectedSport
   );
 
@@ -95,7 +103,9 @@ export default function Index() {
       organizer: newEvent.organizer,
       maxParticipants: newEvent.maxParticipants || 50,
       participants: 0,
-      status: 'upcoming'
+      status: 'upcoming',
+      approved: isAdmin,
+      submittedAt: new Date().toISOString()
     };
     
     setEvents([...events, eventToAdd]);
@@ -112,6 +122,30 @@ export default function Index() {
       participants: 0,
       status: 'upcoming'
     });
+  };
+  
+  const handleApproveEvent = (eventId: number) => {
+    setEvents(events.map(event => 
+      event.id === eventId ? { ...event, approved: true } : event
+    ));
+  };
+  
+  const handleRejectEvent = (eventId: number) => {
+    setEvents(events.filter(event => event.id !== eventId));
+  };
+  
+  const handleAdminLogin = () => {
+    if (adminPassword === 'admin123') {
+      setIsAdmin(true);
+      setIsAdminDialogOpen(false);
+      setAdminPassword('');
+    } else {
+      alert('Неверный пароль');
+    }
+  };
+  
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
   };
 
   const calendarData = useMemo(() => {
@@ -156,7 +190,7 @@ export default function Index() {
           <p className="text-xl text-muted-foreground">Физкультурных, спортивных и выездных мероприятий м.о. Истра</p>
         </header>
 
-        <div className="mb-8 flex flex-wrap gap-4 justify-center animate-slide-up">
+        <div className="mb-8 flex flex-wrap gap-4 justify-center items-center animate-slide-up">
           <Select value={selectedSport} onValueChange={(value) => setSelectedSport(value as SportType)}>
             <SelectTrigger className="w-[200px] border-2 hover:border-primary transition-colors">
               <SelectValue placeholder="Вид спорта" />
@@ -173,15 +207,64 @@ export default function Index() {
             </SelectContent>
           </Select>
           
+          {!isAdmin ? (
+            <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Icon name="Lock" size={18} />
+                  Вход для администратора
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Вход администратора</DialogTitle>
+                  <DialogDescription>
+                    Введите пароль для доступа к панели модерации
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="password">Пароль</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
+                      placeholder="Введите пароль"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setIsAdminDialogOpen(false)}>
+                    Отмена
+                  </Button>
+                  <Button onClick={handleAdminLogin}>
+                    <Icon name="LogIn" size={18} className="mr-2" />
+                    Войти
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <Button variant="outline" onClick={handleAdminLogout} className="gap-2">
+              <Icon name="LogOut" size={18} />
+              Выйти из режима администратора
+            </Button>
+          )}
+          
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">+ Включить в ЕКП</Button>
+              <Button className="gap-2">
+                <Icon name="Plus" size={18} />
+                {isAdmin ? 'Добавить мероприятие' : 'Предложить мероприятие'}
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Новое спортивное мероприятие</DialogTitle>
                 <DialogDescription>
-                  Заполните информацию о мероприятии
+                  {isAdmin ? 'Заполните информацию о мероприятии' : 'Ваше предложение будет отправлено на модерацию администратору'}
                 </DialogDescription>
               </DialogHeader>
               
@@ -292,8 +375,8 @@ export default function Index() {
                   Отмена
                 </Button>
                 <Button onClick={handleAddEvent}>
-                  <Icon name="Plus" size={18} className="mr-2" />
-                  Добавить
+                  <Icon name={isAdmin ? "Plus" : "Send"} size={18} className="mr-2" />
+                  {isAdmin ? 'Добавить' : 'Отправить на модерацию'}
                 </Button>
               </div>
             </DialogContent>
@@ -301,7 +384,7 @@ export default function Index() {
         </div>
 
         <Tabs defaultValue="calendar" className="animate-scale-in">
-          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 mb-8">
+          <TabsList className={`grid w-full max-w-2xl mx-auto ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'} mb-8`}>
             <TabsTrigger value="calendar" className="text-lg">
               <Icon name="CalendarDays" size={18} className="mr-2" />
               Календарь
@@ -314,6 +397,15 @@ export default function Index() {
               <Icon name="History" size={18} className="mr-2" />
               Прошедшие
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="pending" className="text-lg relative">
+                <Icon name="Clock" size={18} className="mr-2" />
+                На модерации
+                {pendingEvents.length > 0 && (
+                  <Badge className="ml-2 bg-orange-500">{pendingEvents.length}</Badge>
+                )}
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="calendar">
@@ -681,6 +773,91 @@ export default function Index() {
               ))}
             </div>
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="pending">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {pendingEvents.length === 0 ? (
+                  <Card className="col-span-full text-center py-12 border-2 border-dashed">
+                    <CardContent>
+                      <Icon name="CheckCircle" size={48} className="mx-auto text-green-500 mb-4" />
+                      <p className="text-lg text-muted-foreground">Нет событий на модерации</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  pendingEvents.map((event, index) => (
+                    <Card 
+                      key={event.id} 
+                      className="hover:shadow-xl transition-all duration-300 border-2 border-orange-500 animate-fade-in"
+                      style={{ animationDelay: `${index * 100}ms` }}
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between mb-2">
+                          <Badge variant="default" className="bg-orange-500 text-white">
+                            <Icon name="Clock" size={14} className="mr-1" />
+                            На модерации
+                          </Badge>
+                          <Badge variant="outline">
+                            <Icon name={sportIcons[event.sport]} size={14} className="mr-1" />
+                            {sportNames[event.sport]}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-xl leading-tight">{event.title}</CardTitle>
+                        <CardDescription className="flex flex-col gap-1 mt-2">
+                          <div className="flex items-center gap-2">
+                            <Icon name="Clock" size={16} />
+                            {new Date(event.date).toLocaleDateString('ru-RU')} в {event.time}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Icon name="MapPin" size={16} />
+                            {event.location}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <Icon name="Calendar" size={14} />
+                            Подано: {new Date(event.submittedAt).toLocaleDateString('ru-RU')}
+                          </div>
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 mb-4">
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Организатор:</span>
+                            <span className="font-medium ml-2">{event.organizer}</span>
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Описание:</span>
+                            <p className="mt-1 text-foreground">{event.description || 'Не указано'}</p>
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Макс. участников:</span>
+                            <span className="font-medium ml-2">{event.maxParticipants}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                            onClick={() => handleApproveEvent(event.id)}
+                          >
+                            <Icon name="Check" size={18} className="mr-2" />
+                            Одобрить
+                          </Button>
+                          <Button 
+                            variant="destructive"
+                            className="flex-1"
+                            onClick={() => handleRejectEvent(event.id)}
+                          >
+                            <Icon name="X" size={18} className="mr-2" />
+                            Отклонить
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
 
         <section className="mt-16 text-center animate-fade-in">
