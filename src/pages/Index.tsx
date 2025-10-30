@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 
 type SportType = 'all' | 'football' | 'basketball' | 'running' | 'volleyball' | 'tennis';
@@ -50,6 +51,7 @@ const sportNames: Record<SportType, string> = {
 };
 
 export default function Index() {
+  const { toast } = useToast();
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [selectedSport, setSelectedSport] = useState<SportType>('all');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -84,11 +86,24 @@ export default function Index() {
   const pastEvents = filteredEvents.filter(e => e.status === 'past');
 
   const handleRegister = (eventId: number) => {
+    const event = events.find(e => e.id === eventId);
     setRegisteredEvents([...registeredEvents, eventId]);
+    
+    if (event) {
+      toast({
+        title: "Регистрация успешна",
+        description: `Вы зарегистрированы на "${event.title}"`
+      });
+    }
   };
 
   const handleAddEvent = () => {
     if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.organizer) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните все обязательные поля",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -110,6 +125,19 @@ export default function Index() {
     
     setEvents([...events, eventToAdd]);
     setIsAddDialogOpen(false);
+    
+    if (isAdmin) {
+      toast({
+        title: "Мероприятие добавлено",
+        description: `"${eventToAdd.title}" успешно добавлено в календарь`
+      });
+    } else {
+      toast({
+        title: "Отправлено на модерацию",
+        description: `"${eventToAdd.title}" будет добавлено после проверки администратором`
+      });
+    }
+    
     setNewEvent({
       title: '',
       date: '',
@@ -125,13 +153,30 @@ export default function Index() {
   };
   
   const handleApproveEvent = (eventId: number) => {
-    setEvents(events.map(event => 
-      event.id === eventId ? { ...event, approved: true } : event
+    const event = events.find(e => e.id === eventId);
+    setEvents(events.map(e => 
+      e.id === eventId ? { ...e, approved: true } : e
     ));
+    
+    if (event) {
+      toast({
+        title: "Мероприятие одобрено",
+        description: `"${event.title}" добавлено в календарь`
+      });
+    }
   };
   
   const handleRejectEvent = (eventId: number) => {
-    setEvents(events.filter(event => event.id !== eventId));
+    const event = events.find(e => e.id === eventId);
+    setEvents(events.filter(e => e.id !== eventId));
+    
+    if (event) {
+      toast({
+        title: "Мероприятие отклонено",
+        description: `"${event.title}" было удалено из заявок`,
+        variant: "destructive"
+      });
+    }
   };
   
   const handleAdminLogin = () => {
@@ -139,13 +184,25 @@ export default function Index() {
       setIsAdmin(true);
       setIsAdminDialogOpen(false);
       setAdminPassword('');
+      toast({
+        title: "Вход выполнен",
+        description: "Вы вошли в режим администратора"
+      });
     } else {
-      alert('Неверный пароль');
+      toast({
+        title: "Ошибка входа",
+        description: "Неверный пароль",
+        variant: "destructive"
+      });
     }
   };
   
   const handleAdminLogout = () => {
     setIsAdmin(false);
+    toast({
+      title: "Выход выполнен",
+      description: "Вы вышли из режима администратора"
+    });
   };
 
   const calendarData = useMemo(() => {
