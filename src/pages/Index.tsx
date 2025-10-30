@@ -697,7 +697,7 @@ export default function Index() {
             <CardContent className="space-y-3 text-left">
               <div className="flex items-center gap-3">
                 <Icon name="Mail" size={20} className="text-secondary" />
-                <span>info@sportcalendar.ru</span>
+                <span>info@sportvokrugistra.ru</span>
               </div>
               <div className="flex items-center gap-3">
                 <Icon name="Phone" size={20} className="text-accent" />
