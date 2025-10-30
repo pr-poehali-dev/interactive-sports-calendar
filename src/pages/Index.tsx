@@ -39,6 +39,19 @@ const mockEvents: Event[] = [
     organizer: 'Спортивный клуб "Олимп"'
   },
   {
+    id: 6,
+    title: 'Народный трейл',
+    date: '2025-11-04',
+    time: '10:00',
+    location: 'Лесопарк',
+    sport: 'running',
+    participants: 45,
+    maxParticipants: 80,
+    status: 'upcoming',
+    description: 'Трейловый забег по пересечённой местности на дистанцию 15 км. Подходит для любителей бега на природе.',
+    organizer: 'Беговой клуб "Трейл"'
+  },
+  {
     id: 2,
     title: 'Турнир по футболу 5х5',
     date: '2025-11-08',
