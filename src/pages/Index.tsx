@@ -343,31 +343,7 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-12 animate-fade-in">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Icon name="Trophy" size={48} className="text-primary" />
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">Единый календарный план - 2026</h1>
-          </div>
-          <p className="text-xl text-muted-foreground">Физкультурных, спортивных и выездных мероприятий м.о. Истра</p>
-        </header>
-
-        <div className="mb-8 flex flex-wrap gap-4 justify-center items-center animate-slide-up">
-          <Select value={selectedSport} onValueChange={(value) => setSelectedSport(value as SportType)}>
-            <SelectTrigger className="w-[200px] border-2 hover:border-primary transition-colors">
-              <SelectValue placeholder="Вид спорта" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(sportNames).map(([key, name]) => (
-                <SelectItem key={key} value={key}>
-                  <div className="flex items-center gap-2">
-                    <Icon name={sportIcons[key as SportType]} size={16} />
-                    {name}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
+        <div className="absolute top-4 right-4 flex gap-2 items-center z-50">
           {!isLoggedIn && !isAdmin && (
             <>
               <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
@@ -566,6 +542,32 @@ export default function Index() {
               Выйти из режима администратора
             </Button>
           )}
+        </div>
+        
+        <header className="text-center mb-12 animate-fade-in">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Icon name="Trophy" size={48} className="text-primary" />
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">Единый календарный план - 2026</h1>
+          </div>
+          <p className="text-xl text-muted-foreground">Физкультурных, спортивных и выездных мероприятий м.о. Истра</p>
+        </header>
+
+        <div className="mb-8 flex flex-wrap gap-4 justify-center items-center animate-slide-up">
+          <Select value={selectedSport} onValueChange={(value) => setSelectedSport(value as SportType)}>
+            <SelectTrigger className="w-[200px] border-2 hover:border-primary transition-colors">
+              <SelectValue placeholder="Вид спорта" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(sportNames).map(([key, name]) => (
+                <SelectItem key={key} value={key}>
+                  <div className="flex items-center gap-2">
+                    <Icon name={sportIcons[key as SportType]} size={16} />
+                    {name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
