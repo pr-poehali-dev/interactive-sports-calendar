@@ -817,7 +817,7 @@ export default function Index() {
             <div className="max-w-4xl mx-auto">
               <Card className="mb-6 border-2 bg-white">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between bg-slate-800">
                     <Button 
                       variant="outline" 
                       size="icon"
@@ -838,7 +838,7 @@ export default function Index() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-2 bg-slate-800">
                     {['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'].map((day) => (
                       <div key={day} className="text-center font-bold text-sm text-muted-foreground py-2">
                         {day}
