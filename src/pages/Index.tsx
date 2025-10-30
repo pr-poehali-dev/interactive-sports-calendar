@@ -728,6 +728,7 @@ export default function Index() {
                       <SelectContent>
                         {Object.entries(sportNames)
                           .filter(([key]) => key !== 'all')
+                          .sort((a, b) => a[1].localeCompare(b[1], 'ru'))
                           .map(([key, name]) => (
                             <SelectItem key={key} value={key}>
                               <div className="flex items-center gap-2">
