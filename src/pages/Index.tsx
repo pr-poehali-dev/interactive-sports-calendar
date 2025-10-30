@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -116,6 +116,8 @@ export default function Index() {
   const [selectedSport, setSelectedSport] = useState<SportType>('all');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [registeredEvents, setRegisteredEvents] = useState<number[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const filteredEvents = mockEvents.filter(event => 
     selectedSport === 'all' ? true : event.sport === selectedSport
@@ -127,6 +129,37 @@ export default function Index() {
   const handleRegister = (eventId: number) => {
     setRegisteredEvents([...registeredEvents, eventId]);
   };
+
+  const calendarData = useMemo(() => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay();
+    
+    const days: Array<{ date: number; hasEvents: boolean; events: Event[]; isToday: boolean }> = [];
+    const today = new Date();
+    
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push({ date: 0, hasEvents: false, events: [], isToday: false });
+    }
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayEvents = upcomingEvents.filter(e => e.date === dateStr);
+      const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+      days.push({ date: day, hasEvents: dayEvents.length > 0, events: dayEvents, isToday });
+    }
+    
+    return days;
+  }, [currentMonth, upcomingEvents]);
+
+  const changeMonth = (offset: number) => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1));
+  };
+
+  const monthName = currentMonth.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50">
@@ -161,8 +194,12 @@ export default function Index() {
           </Select>
         </div>
 
-        <Tabs defaultValue="upcoming" className="animate-scale-in">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+        <Tabs defaultValue="calendar" className="animate-scale-in">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 mb-8">
+            <TabsTrigger value="calendar" className="text-lg">
+              <Icon name="CalendarDays" size={18} className="mr-2" />
+              Календарь
+            </TabsTrigger>
             <TabsTrigger value="upcoming" className="text-lg">
               <Icon name="Calendar" size={18} className="mr-2" />
               Предстоящие
@@ -172,6 +209,177 @@ export default function Index() {
               Прошедшие
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="calendar">
+            <div className="max-w-4xl mx-auto">
+              <Card className="mb-6 border-2">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => changeMonth(-1)}
+                      className="hover:bg-primary hover:text-white transition-colors"
+                    >
+                      <Icon name="ChevronLeft" size={20} />
+                    </Button>
+                    <CardTitle className="text-2xl capitalize">{monthName}</CardTitle>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => changeMonth(1)}
+                      className="hover:bg-primary hover:text-white transition-colors"
+                    >
+                      <Icon name="ChevronRight" size={20} />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-7 gap-2">
+                    {['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'].map((day) => (
+                      <div key={day} className="text-center font-bold text-sm text-muted-foreground py-2">
+                        {day}
+                      </div>
+                    ))}
+                    {calendarData.map((day, index) => (
+                      <button
+                        key={index}
+                        disabled={day.date === 0}
+                        onClick={() => day.date > 0 && setSelectedDate(day.date > 0 ? `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}` : null)}
+                        className={`
+                          aspect-square p-2 rounded-lg text-center transition-all duration-200
+                          ${day.date === 0 ? 'invisible' : ''}
+                          ${day.isToday ? 'ring-2 ring-accent font-bold' : ''}
+                          ${day.hasEvents ? 'bg-gradient-to-br from-primary/20 to-secondary/20 font-semibold hover:from-primary/30 hover:to-secondary/30' : 'hover:bg-muted'}
+                          ${selectedDate === `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}` ? 'bg-primary text-white hover:bg-primary' : ''}
+                        `}
+                      >
+                        <div className="text-sm">{day.date || ''}</div>
+                        {day.hasEvents && (
+                          <div className="flex gap-0.5 justify-center mt-1">
+                            {day.events.slice(0, 3).map((event, i) => (
+                              <div key={i} className="w-1 h-1 rounded-full bg-primary" />
+                            ))}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {selectedDate && (
+                <div className="animate-fade-in">
+                  <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <Icon name="CalendarCheck" size={24} className="text-primary" />
+                    События на {new Date(selectedDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {upcomingEvents.filter(e => e.date === selectedDate).map((event) => (
+                      <Card key={event.id} className="hover:shadow-lg transition-all border-2 hover:border-primary">
+                        <CardHeader>
+                          <div className="flex items-start justify-between mb-2">
+                            <Badge className="bg-gradient-to-r from-primary to-secondary text-white">
+                              <Icon name={sportIcons[event.sport]} size={14} className="mr-1" />
+                              {sportNames[event.sport]}
+                            </Badge>
+                          </div>
+                          <CardTitle className="text-lg">{event.title}</CardTitle>
+                          <CardDescription className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <Icon name="Clock" size={14} />
+                              {event.time}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Icon name="MapPin" size={14} />
+                              {event.location}
+                            </div>
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                className="w-full bg-gradient-to-r from-primary to-secondary"
+                                onClick={() => setSelectedEvent(event)}
+                              >
+                                <Icon name="Info" size={16} className="mr-2" />
+                                Подробнее
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle className="text-2xl flex items-center gap-2">
+                                  <Icon name={sportIcons[event.sport]} size={24} className="text-primary" />
+                                  {event.title}
+                                </DialogTitle>
+                                <DialogDescription className="text-base space-y-3 pt-4">
+                                  <div className="flex items-center gap-2">
+                                    <Icon name="Calendar" size={18} className="text-primary" />
+                                    <strong>Дата:</strong> {new Date(event.date).toLocaleDateString('ru-RU')} в {event.time}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Icon name="MapPin" size={18} className="text-secondary" />
+                                    <strong>Место:</strong> {event.location}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Icon name="Users" size={18} className="text-accent" />
+                                    <strong>Участники:</strong> {event.participants} из {event.maxParticipants}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Icon name="Building" size={18} className="text-muted-foreground" />
+                                    <strong>Организатор:</strong> {event.organizer}
+                                  </div>
+                                  <div className="pt-2">
+                                    <p className="text-foreground">{event.description}</p>
+                                  </div>
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="pt-4">
+                                {registeredEvents.includes(event.id) ? (
+                                  <Button disabled className="w-full" variant="outline">
+                                    <Icon name="CheckCircle" size={18} className="mr-2" />
+                                    Вы зарегистрированы
+                                  </Button>
+                                ) : (
+                                  <Button 
+                                    className="w-full bg-gradient-to-r from-primary to-secondary"
+                                    onClick={() => handleRegister(event.id)}
+                                    disabled={event.participants >= event.maxParticipants}
+                                  >
+                                    <Icon name="UserPlus" size={18} className="mr-2" />
+                                    Зарегистрироваться
+                                  </Button>
+                                )}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  {upcomingEvents.filter(e => e.date === selectedDate).length === 0 && (
+                    <Card className="text-center py-8">
+                      <CardContent>
+                        <Icon name="CalendarX" size={48} className="mx-auto text-muted-foreground mb-2" />
+                        <p className="text-muted-foreground">На эту дату событий не запланировано</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {!selectedDate && (
+                <Card className="text-center py-12 border-2 border-dashed">
+                  <CardContent>
+                    <Icon name="MousePointerClick" size={48} className="mx-auto text-primary mb-4" />
+                    <p className="text-lg text-muted-foreground">Выберите дату в календаре, чтобы увидеть события</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
 
           <TabsContent value="upcoming">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
