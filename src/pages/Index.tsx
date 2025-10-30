@@ -429,7 +429,7 @@ export default function Index() {
   const monthName = currentMonth.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="container mx-auto px-4 py-8">
         <div className="absolute top-4 right-4 flex gap-2 items-center z-50">
           {!isLoggedIn && !isAdmin && (
