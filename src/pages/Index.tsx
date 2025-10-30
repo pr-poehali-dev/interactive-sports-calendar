@@ -175,7 +175,7 @@ export default function Index() {
           
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">Включить в ЕКП</Button>
+              <Button className="gap-2">+ Включить в ЕКП</Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
