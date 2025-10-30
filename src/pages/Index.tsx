@@ -218,18 +218,6 @@ export default function Index() {
     });
   };
   
-  const handleRegister = (eventId: number) => {
-    const event = events.find(e => e.id === eventId);
-    setRegisteredEvents([...registeredEvents, eventId]);
-    
-    if (event) {
-      toast({
-        title: "Регистрация успешна",
-        description: `Вы зарегистрированы на "${event.title}"`
-      });
-    }
-  };
-  
   const handleUserRegister = () => {
     if (!registerForm.email || !registerForm.password || !registerForm.name || !registerForm.phone) {
       toast({
