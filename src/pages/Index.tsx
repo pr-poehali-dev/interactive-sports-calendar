@@ -50,6 +50,12 @@ const sportNames: Record<SportType, string> = {
   tennis: 'Теннис'
 };
 
+interface User {
+  email: string;
+  name: string;
+  phone: string;
+}
+
 export default function Index() {
   const { toast } = useToast();
   const [events, setEvents] = useState<Event[]>(initialEvents);
@@ -62,6 +68,13 @@ export default function Index() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+  const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [registerForm, setRegisterForm] = useState({ email: '', password: '', name: '', phone: '' });
+  const [users, setUsers] = useState<Array<User & { password: string }>>([]);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
     date: '',
@@ -204,6 +217,109 @@ export default function Index() {
       description: "Вы вышли из режима администратора"
     });
   };
+  
+  const handleRegister = (eventId: number) => {
+    const event = events.find(e => e.id === eventId);
+    setRegisteredEvents([...registeredEvents, eventId]);
+    
+    if (event) {
+      toast({
+        title: "Регистрация успешна",
+        description: `Вы зарегистрированы на "${event.title}"`
+      });
+    }
+  };
+  
+  const handleUserRegister = () => {
+    if (!registerForm.email || !registerForm.password || !registerForm.name || !registerForm.phone) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните все поля",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (users.find(u => u.email === registerForm.email)) {
+      toast({
+        title: "Ошибка",
+        description: "Пользователь с таким email уже существует",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const newUser = {
+      email: registerForm.email,
+      password: registerForm.password,
+      name: registerForm.name,
+      phone: registerForm.phone
+    };
+    
+    setUsers([...users, newUser]);
+    setCurrentUser({ email: newUser.email, name: newUser.name, phone: newUser.phone });
+    setIsLoggedIn(true);
+    setIsRegisterDialogOpen(false);
+    setRegisterForm({ email: '', password: '', name: '', phone: '' });
+    
+    toast({
+      title: "Регистрация успешна",
+      description: `Добро пожаловать, ${newUser.name}!`
+    });
+  };
+  
+  const handleUserLogin = () => {
+    if (!loginForm.email || !loginForm.password) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните все поля",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const user = users.find(u => u.email === loginForm.email && u.password === loginForm.password);
+    
+    if (user) {
+      setCurrentUser({ email: user.email, name: user.name, phone: user.phone });
+      setIsLoggedIn(true);
+      setIsLoginDialogOpen(false);
+      setLoginForm({ email: '', password: '' });
+      
+      toast({
+        title: "Вход выполнен",
+        description: `Добро пожаловать, ${user.name}!`
+      });
+    } else {
+      toast({
+        title: "Ошибка входа",
+        description: "Неверный email или пароль",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleUserLogout = () => {
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+    toast({
+      title: "Выход выполнен",
+      description: "До свидания!"
+    });
+  };
+  
+  const handleOpenAddDialog = () => {
+    if (!isLoggedIn && !isAdmin) {
+      toast({
+        title: "Требуется авторизация",
+        description: "Войдите или зарегистрируйтесь, чтобы предложить мероприятие",
+        variant: "destructive"
+      });
+      setIsLoginDialogOpen(true);
+      return;
+    }
+    setIsAddDialogOpen(true);
+  };
 
   const calendarData = useMemo(() => {
     const year = currentMonth.getFullYear();
@@ -264,12 +380,165 @@ export default function Index() {
             </SelectContent>
           </Select>
           
+          {!isLoggedIn && !isAdmin && (
+            <>
+              <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Icon name="LogIn" size={18} />
+                    Войти
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Вход в систему</DialogTitle>
+                    <DialogDescription>
+                      Войдите, чтобы предлагать мероприятия
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="login-email">Email</Label>
+                      <Input
+                        id="login-email"
+                        type="email"
+                        value={loginForm.email}
+                        onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+                        placeholder="your@email.com"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="login-password">Пароль</Label>
+                      <Input
+                        id="login-password"
+                        type="password"
+                        value={loginForm.password}
+                        onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                        onKeyDown={(e) => e.key === 'Enter' && handleUserLogin()}
+                        placeholder="Введите пароль"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" onClick={() => setIsLoginDialogOpen(false)}>
+                      Отмена
+                    </Button>
+                    <Button onClick={handleUserLogin}>
+                      <Icon name="LogIn" size={18} className="mr-2" />
+                      Войти
+                    </Button>
+                  </div>
+                  <div className="text-center text-sm text-muted-foreground pt-2 border-t">
+                    Нет аккаунта?{' '}
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto"
+                      onClick={() => {
+                        setIsLoginDialogOpen(false);
+                        setIsRegisterDialogOpen(true);
+                      }}
+                    >
+                      Зарегистрироваться
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              
+              <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Icon name="UserPlus" size={18} />
+                    Регистрация
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Регистрация</DialogTitle>
+                    <DialogDescription>
+                      Создайте аккаунт для участия в мероприятиях
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="register-name">Имя *</Label>
+                      <Input
+                        id="register-name"
+                        value={registerForm.name}
+                        onChange={(e) => setRegisterForm({...registerForm, name: e.target.value})}
+                        placeholder="Иван Иванов"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="register-email">Email *</Label>
+                      <Input
+                        id="register-email"
+                        type="email"
+                        value={registerForm.email}
+                        onChange={(e) => setRegisterForm({...registerForm, email: e.target.value})}
+                        placeholder="your@email.com"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="register-phone">Телефон *</Label>
+                      <Input
+                        id="register-phone"
+                        type="tel"
+                        value={registerForm.phone}
+                        onChange={(e) => setRegisterForm({...registerForm, phone: e.target.value})}
+                        placeholder="+7 (999) 123-45-67"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="register-password">Пароль *</Label>
+                      <Input
+                        id="register-password"
+                        type="password"
+                        value={registerForm.password}
+                        onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})}
+                        placeholder="Минимум 6 символов"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" onClick={() => setIsRegisterDialogOpen(false)}>
+                      Отмена
+                    </Button>
+                    <Button onClick={handleUserRegister}>
+                      <Icon name="UserPlus" size={18} className="mr-2" />
+                      Зарегистрироваться
+                    </Button>
+                  </div>
+                  <div className="text-center text-sm text-muted-foreground pt-2 border-t">
+                    Уже есть аккаунт?{' '}
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto"
+                      onClick={() => {
+                        setIsRegisterDialogOpen(false);
+                        setIsLoginDialogOpen(true);
+                      }}
+                    >
+                      Войти
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
+          
+          {isLoggedIn && !isAdmin && (
+            <Button variant="outline" onClick={handleUserLogout} className="gap-2">
+              <Icon name="User" size={18} />
+              {currentUser?.name}
+              <Icon name="LogOut" size={16} className="ml-2" />
+            </Button>
+          )}
+          
           {!isAdmin ? (
             <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button variant="ghost" size="icon">
                   <Icon name="Lock" size={18} />
-                  Вход для администратора
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md">
@@ -312,7 +581,7 @@ export default function Index() {
           
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={handleOpenAddDialog}>
                 <Icon name="Plus" size={18} />
                 {isAdmin ? 'Добавить мероприятие' : 'Предложить мероприятие'}
               </Button>
