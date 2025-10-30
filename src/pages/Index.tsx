@@ -815,7 +815,7 @@ export default function Index() {
 
           <TabsContent value="calendar">
             <div className="max-w-4xl mx-auto">
-              <Card className="mb-6 border-2">
+              <Card className="mb-6 border-2 bg-white">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <Button 
