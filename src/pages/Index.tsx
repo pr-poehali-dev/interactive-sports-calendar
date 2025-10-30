@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import Icon from '@/components/ui/icon';
 
 type SportType = 'all' | 'football' | 'basketball' | 'running' | 'volleyball' | 'tennis';
@@ -24,7 +27,7 @@ interface Event {
   result?: string;
 }
 
-const mockEvents: Event[] = [
+const initialEvents: Event[] = [
   {
     id: 1,
     title: 'Городской марафон "Весенний забег"',
@@ -126,13 +129,27 @@ const sportNames: Record<SportType, string> = {
 };
 
 export default function Index() {
+  const [events, setEvents] = useState<Event[]>(initialEvents);
   const [selectedSport, setSelectedSport] = useState<SportType>('all');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [registeredEvents, setRegisteredEvents] = useState<number[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newEvent, setNewEvent] = useState<Partial<Event>>({
+    title: '',
+    date: '',
+    time: '',
+    location: '',
+    sport: 'running',
+    description: '',
+    organizer: '',
+    maxParticipants: 50,
+    participants: 0,
+    status: 'upcoming'
+  });
 
-  const filteredEvents = mockEvents.filter(event => 
+  const filteredEvents = events.filter(event => 
     selectedSport === 'all' ? true : event.sport === selectedSport
   );
 
@@ -141,6 +158,41 @@ export default function Index() {
 
   const handleRegister = (eventId: number) => {
     setRegisteredEvents([...registeredEvents, eventId]);
+  };
+
+  const handleAddEvent = () => {
+    if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.organizer) {
+      return;
+    }
+    
+    const eventToAdd: Event = {
+      id: Math.max(...events.map(e => e.id), 0) + 1,
+      title: newEvent.title,
+      date: newEvent.date,
+      time: newEvent.time,
+      location: newEvent.location,
+      sport: newEvent.sport as SportType,
+      description: newEvent.description || '',
+      organizer: newEvent.organizer,
+      maxParticipants: newEvent.maxParticipants || 50,
+      participants: 0,
+      status: 'upcoming'
+    };
+    
+    setEvents([...events, eventToAdd]);
+    setIsAddDialogOpen(false);
+    setNewEvent({
+      title: '',
+      date: '',
+      time: '',
+      location: '',
+      sport: 'running',
+      description: '',
+      organizer: '',
+      maxParticipants: 50,
+      participants: 0,
+      status: 'upcoming'
+    });
   };
 
   const calendarData = useMemo(() => {
@@ -205,6 +257,135 @@ export default function Index() {
               ))}
             </SelectContent>
           </Select>
+          
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Icon name="Plus" size={18} />
+                Добавить мероприятие
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Новое спортивное мероприятие</DialogTitle>
+                <DialogDescription>
+                  Заполните информацию о мероприятии
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="title">Название мероприятия *</Label>
+                  <Input
+                    id="title"
+                    value={newEvent.title}
+                    onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
+                    placeholder="Например: Городской марафон"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="date">Дата *</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={newEvent.date}
+                      onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="time">Время *</Label>
+                    <Input
+                      id="time"
+                      type="time"
+                      value={newEvent.time}
+                      onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="location">Место проведения *</Label>
+                  <Input
+                    id="location"
+                    value={newEvent.location}
+                    onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
+                    placeholder="Например: Центральный парк"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="sport">Вид спорта *</Label>
+                    <Select 
+                      value={newEvent.sport} 
+                      onValueChange={(value) => setNewEvent({...newEvent, sport: value as SportType})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(sportNames)
+                          .filter(([key]) => key !== 'all')
+                          .map(([key, name]) => (
+                            <SelectItem key={key} value={key}>
+                              <div className="flex items-center gap-2">
+                                <Icon name={sportIcons[key as SportType]} size={16} />
+                                {name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="maxParticipants">Макс. участников</Label>
+                    <Input
+                      id="maxParticipants"
+                      type="number"
+                      value={newEvent.maxParticipants}
+                      onChange={(e) => setNewEvent({...newEvent, maxParticipants: parseInt(e.target.value) || 50})}
+                      min="1"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="organizer">Организатор *</Label>
+                  <Input
+                    id="organizer"
+                    value={newEvent.organizer}
+                    onChange={(e) => setNewEvent({...newEvent, organizer: e.target.value})}
+                    placeholder="Например: Спортивный клуб"
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Описание</Label>
+                  <Textarea
+                    id="description"
+                    value={newEvent.description}
+                    onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
+                    placeholder="Подробное описание мероприятия"
+                    rows={4}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  Отмена
+                </Button>
+                <Button onClick={handleAddEvent}>
+                  <Icon name="Plus" size={18} className="mr-2" />
+                  Добавить
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <Tabs defaultValue="calendar" className="animate-scale-in">
