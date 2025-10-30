@@ -635,7 +635,7 @@ export default function Index() {
         <header className="text-center mb-12 mt-20 animate-fade-in">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Icon name="Trophy" size={48} className="text-primary" />
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">Единый календарный план - 2026</h1>
+            <h1 className="text-5xl font-bold bg-gradient-to-b from-white via-blue-500 to-red-600 bg-clip-text text-transparent">Единый календарный план - 2026</h1>
           </div>
           <p className="text-xl text-muted-foreground">Физкультурных, спортивных и выездных мероприятий м.о. Истра</p>
         </header>
