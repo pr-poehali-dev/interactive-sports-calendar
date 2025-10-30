@@ -153,9 +153,7 @@ export default function Index() {
             <Icon name="Trophy" size={48} className="text-primary" />
             <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">Единый календарный план - 2026</h1>
           </div>
-          <p className="text-xl text-muted-foreground">
-            Физкультурные и спортивные мероприятия вашего города
-          </p>
+          <p className="text-xl text-muted-foreground">Физкультурных, спортивных и выездных мероприятий м.о. Истра</p>
         </header>
 
         <div className="mb-8 flex flex-wrap gap-4 justify-center animate-slide-up">
