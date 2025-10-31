@@ -513,7 +513,7 @@ export default function Index() {
         <div className="flex-1 bg-blue-600"></div>
         <div className="flex-1 bg-red-600"></div>
       </div>
-      <div className="container mx-auto px-4 py-8 pt-12 bg-zinc-400">
+      <div className="container mx-auto px-4 py-8 pt-12 bg-slate-50">
         <div className="absolute top-4 right-4 flex gap-2 items-center z-50">
           {!isLoggedIn && !isAdmin && (
             <>
