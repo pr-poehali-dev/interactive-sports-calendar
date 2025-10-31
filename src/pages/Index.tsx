@@ -273,6 +273,8 @@ export default function Index() {
   const [customSport, setCustomSport] = useState('');
   const [showCustomSportInput, setShowCustomSportInput] = useState(false);
   const [suggestedEventType, setSuggestedEventType] = useState<'local' | 'away' | null>(null);
+  const [manualEventNumber, setManualEventNumber] = useState('');
+  const [showManualEventNumber, setShowManualEventNumber] = useState(false);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
     date: '',
@@ -335,7 +337,17 @@ export default function Index() {
     
     const newId = Math.max(...events.map(e => e.id), 0) + 1;
     const year = new Date(newEvent.date).getFullYear();
-    const eventNumber = `МО-${year}-${String(newId).padStart(3, '0')}`;
+    
+    const eventType = newEvent.eventType || suggestedEventType || 'local';
+    const eventLevel = newEvent.eventLevel;
+    const isAutoNumber = eventType === 'local' && (eventLevel === 'municipal' || eventLevel === 'intermunicipal');
+    
+    let finalEventNumber: string | undefined;
+    if (isAutoNumber) {
+      finalEventNumber = `МО-${year}-${String(newId).padStart(3, '0')}`;
+    } else if (manualEventNumber.trim()) {
+      finalEventNumber = manualEventNumber.trim();
+    }
     
     const finalSport = showCustomSportInput ? customSport : newEvent.sport;
     const finalTitle = showCustomSportInput 
@@ -344,12 +356,12 @@ export default function Index() {
     
     const eventToAdd: Event = {
       id: newId,
-      eventNumber: eventNumber,
+      eventNumber: finalEventNumber,
       title: finalTitle,
       date: newEvent.date,
       time: newEvent.time,
       location: newEvent.location,
-      eventType: newEvent.eventType || suggestedEventType || 'local',
+      eventType: eventType,
       eventLevel: newEvent.eventLevel,
       sport: (showCustomSportInput ? 'all' : newEvent.sport) as SportType,
       description: newEvent.description || '',
@@ -393,6 +405,8 @@ export default function Index() {
     });
     setCustomSport('');
     setShowCustomSportInput(false);
+    setManualEventNumber('');
+    setShowManualEventNumber(false);
   };
   
   const handleApproveEvent = (eventId: number) => {
@@ -1232,7 +1246,13 @@ export default function Index() {
                   <Label htmlFor="eventLevel">Статус мероприятия *</Label>
                   <Select 
                     value={newEvent.eventLevel} 
-                    onValueChange={(value) => setNewEvent({...newEvent, eventLevel: value as EventLevel})}
+                    onValueChange={(value) => {
+                      const level = value as EventLevel;
+                      setNewEvent({...newEvent, eventLevel: level});
+                      const eventType = newEvent.eventType || suggestedEventType || 'local';
+                      const needsManualNumber = !(eventType === 'local' && (level === 'municipal' || level === 'intermunicipal'));
+                      setShowManualEventNumber(needsManualNumber);
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Выберите статус" />
@@ -1246,6 +1266,32 @@ export default function Index() {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {showManualEventNumber && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="manualEventNumber">Номер мероприятия</Label>
+                    <Input
+                      id="manualEventNumber"
+                      value={manualEventNumber}
+                      onChange={(e) => setManualEventNumber(e.target.value)}
+                      placeholder="Например: РФ-2025-123 или МО-456"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Укажите номер мероприятия вручную (необязательно)
+                    </p>
+                  </div>
+                )}
+                
+                {!showManualEventNumber && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-start gap-2">
+                      <Icon name="Info" size={16} className="text-blue-600 mt-0.5" />
+                      <p className="text-sm text-blue-900">
+                        Номер мероприятия будет присвоен автоматически
+                      </p>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
