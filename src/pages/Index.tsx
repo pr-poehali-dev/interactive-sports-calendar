@@ -251,6 +251,8 @@ export default function Index() {
     passportIssuedBy?: string;
   }>>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [customSport, setCustomSport] = useState('');
+  const [showCustomSportInput, setShowCustomSportInput] = useState(false);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
     date: '',
@@ -302,18 +304,32 @@ export default function Index() {
       return;
     }
     
+    if (showCustomSportInput && !customSport.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Укажите название вида спорта",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const newId = Math.max(...events.map(e => e.id), 0) + 1;
     const year = new Date(newEvent.date).getFullYear();
     const eventNumber = `МО-${year}-${String(newId).padStart(3, '0')}`;
     
+    const finalSport = showCustomSportInput ? customSport : newEvent.sport;
+    const finalTitle = showCustomSportInput 
+      ? `${newEvent.title} (${customSport})`
+      : newEvent.title;
+    
     const eventToAdd: Event = {
       id: newId,
       eventNumber: eventNumber,
-      title: newEvent.title,
+      title: finalTitle,
       date: newEvent.date,
       time: newEvent.time,
       location: newEvent.location,
-      sport: newEvent.sport as SportType,
+      sport: (showCustomSportInput ? 'all' : newEvent.sport) as SportType,
       description: newEvent.description || '',
       organizer: newEvent.organizer,
       maxParticipants: newEvent.maxParticipants || 50,
@@ -352,6 +368,8 @@ export default function Index() {
       participants: 0,
       status: 'upcoming'
     });
+    setCustomSport('');
+    setShowCustomSportInput(false);
   };
   
   const handleApproveEvent = (eventId: number) => {
@@ -1085,27 +1103,67 @@ export default function Index() {
                 
                 <div className="grid gap-2">
                   <Label htmlFor="sport">Вид спорта *</Label>
-                  <Select 
-                    value={newEvent.sport} 
-                    onValueChange={(value) => setNewEvent({...newEvent, sport: value as SportType})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(sportNames)
-                        .filter(([key]) => key !== 'all')
-                        .sort((a, b) => a[1].localeCompare(b[1], 'ru'))
-                        .map(([key, name]) => (
-                          <SelectItem key={key} value={key}>
-                            <div className="flex items-center gap-2">
-                              <Icon name={sportIcons[key as SportType]} size={16} />
-                              {name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  {!showCustomSportInput ? (
+                    <div className="space-y-2">
+                      <Select 
+                        value={newEvent.sport} 
+                        onValueChange={(value) => setNewEvent({...newEvent, sport: value as SportType})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(sportNames)
+                            .filter(([key]) => key !== 'all')
+                            .sort((a, b) => a[1].localeCompare(b[1], 'ru'))
+                            .map(([key, name]) => (
+                              <SelectItem key={key} value={key}>
+                                <div className="flex items-center gap-2">
+                                  <Icon name={sportIcons[key as SportType]} size={16} />
+                                  {name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => setShowCustomSportInput(true)}
+                      >
+                        <Icon name="Plus" size={16} className="mr-2" />
+                        Указать свой вид спорта
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Введите название вида спорта"
+                        value={customSport}
+                        onChange={(e) => setCustomSport(e.target.value)}
+                      />
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button"
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => {
+                            setShowCustomSportInput(false);
+                            setCustomSport('');
+                          }}
+                        >
+                          <Icon name="X" size={16} className="mr-2" />
+                          Отмена
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Ваш вариант: <strong>{customSport || '(не указан)'}</strong>
+                      </p>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
