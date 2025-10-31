@@ -506,9 +506,8 @@ export default function Index() {
                 <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>Регистрация</DialogTitle>
-                    <DialogDescription>
-                      Создайте аккаунт для участия в мероприятиях
-                    </DialogDescription>
+                    <DialogDescription>Для организаторов мероприятий
+(ВНИМАНИЕ! требуется обработка персональных данных)</DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
