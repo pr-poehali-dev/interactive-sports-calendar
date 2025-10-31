@@ -250,6 +250,7 @@ export default function Index() {
     passportIssueDate?: string;
     passportIssuedBy?: string;
   }>>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
     date: '',
@@ -266,9 +267,15 @@ export default function Index() {
   const approvedEvents = events.filter(event => event.approved);
   const pendingEvents = events.filter(event => !event.approved);
   
-  const filteredEvents = approvedEvents.filter(event => 
-    selectedSport === 'all' ? true : event.sport === selectedSport
-  );
+  const filteredEvents = approvedEvents.filter(event => {
+    const matchesSport = selectedSport === 'all' ? true : event.sport === selectedSport;
+    const matchesSearch = searchQuery === '' || 
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.organizer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (event.eventNumber && event.eventNumber.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesSport && matchesSearch;
+  });
 
   const upcomingEvents = filteredEvents.filter(e => e.status === 'upcoming');
   const pastEvents = filteredEvents.filter(e => e.status === 'past');
@@ -992,6 +999,16 @@ export default function Index() {
         </header>
 
         <div className="mb-8 flex flex-wrap gap-4 justify-center items-center animate-slide-up bg-slate-900">
+          <div className="relative">
+            <Icon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Поиск по названию, месту, номеру..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-[300px] pl-10 border-2 hover:border-primary transition-colors"
+            />
+          </div>
+          
           <Select value={selectedSport} onValueChange={(value) => setSelectedSport(value as SportType)}>
             <SelectTrigger className="w-[200px] border-2 hover:border-primary transition-colors">
               <SelectValue placeholder="Вид спорта" />
