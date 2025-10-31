@@ -204,6 +204,7 @@ export default function Index() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ 
     email: '', 
@@ -1123,14 +1124,58 @@ export default function Index() {
                       type="file"
                       multiple
                       accept=".pdf,.doc,.docx"
-                      onChange={(e) => {
+                      disabled={isUploading}
+                      onChange={async (e) => {
                         const files = Array.from(e.target.files || []);
-                        const docs = files.map(f => ({ name: f.name, url: URL.createObjectURL(f) }));
-                        setNewEvent({...newEvent, documents: docs});
+                        if (files.length === 0) return;
+                        
+                        setIsUploading(true);
+                        const uploadedDocs: { name: string; url: string }[] = [];
+                        
+                        try {
+                          for (const file of files) {
+                            const reader = new FileReader();
+                            const fileContent = await new Promise<string>((resolve) => {
+                              reader.onload = () => {
+                                const base64 = (reader.result as string).split(',')[1];
+                                resolve(base64);
+                              };
+                              reader.readAsDataURL(file);
+                            });
+                            
+                            const response = await fetch('https://functions.poehali.dev/3b73897b-697b-4c87-b36f-0fcc17893bc3', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                fileName: file.name,
+                                fileContent: fileContent
+                              })
+                            });
+                            
+                            const result = await response.json();
+                            uploadedDocs.push({ name: file.name, url: result.url });
+                          }
+                          
+                          setNewEvent({...newEvent, documents: uploadedDocs});
+                          toast({
+                            title: "Файлы загружены",
+                            description: `Загружено ${uploadedDocs.length} файл(ов)`
+                          });
+                        } catch (error) {
+                          toast({
+                            title: "Ошибка загрузки",
+                            description: "Не удалось загрузить файлы",
+                            variant: "destructive"
+                          });
+                        } finally {
+                          setIsUploading(false);
+                        }
                       }}
                       className="cursor-pointer"
                     />
-                    <p className="text-xs text-muted-foreground">Загрузите положение, регламент и другие документы (PDF, DOC, DOCX)</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isUploading ? 'Загрузка файлов...' : 'Загрузите положение, регламент и другие документы (PDF, DOC, DOCX)'}
+                    </p>
                     {newEvent.documents && newEvent.documents.length > 0 && (
                       <div className="space-y-1 text-sm">
                         <p className="font-semibold">Прикреплённые файлы:</p>

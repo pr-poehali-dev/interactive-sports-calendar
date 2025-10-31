@@ -1,0 +1,26 @@
+{
+  "tests": [
+    {
+      "name": "Upload document successfully",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "fileName": "test-document.pdf",
+        "fileContent": "JVBERi0xLjQKJeLjz9MKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSPj4KZW5kb2JqCg=="
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "url": "string",
+        "fileName": "string",
+        "fileId": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Handle OPTIONS request",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
