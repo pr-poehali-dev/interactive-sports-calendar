@@ -21,6 +21,7 @@ interface Event {
   date: string;
   time: string;
   location: string;
+  eventType?: 'local' | 'away';
   sport: SportType;
   participants: number;
   maxParticipants: number;
@@ -43,6 +44,7 @@ const initialEvents: Event[] = [
     date: '2025-11-15',
     time: '10:00',
     location: 'Спортивный комплекс "Истра", ул. Ленина, 1',
+    eventType: 'local',
     sport: 'sambo',
     participants: 0,
     maxParticipants: 50,
@@ -60,6 +62,7 @@ const initialEvents: Event[] = [
   {
     id: 2,
     eventNumber: 'МО-2025-002',
+    eventType: 'local',
     title: 'Истринский забег',
     date: '2025-10-10',
     time: '09:00',
@@ -253,6 +256,7 @@ export default function Index() {
   const [searchQuery, setSearchQuery] = useState('');
   const [customSport, setCustomSport] = useState('');
   const [showCustomSportInput, setShowCustomSportInput] = useState(false);
+  const [suggestedEventType, setSuggestedEventType] = useState<'local' | 'away' | null>(null);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
     date: '',
@@ -329,6 +333,7 @@ export default function Index() {
       date: newEvent.date,
       time: newEvent.time,
       location: newEvent.location,
+      eventType: newEvent.eventType || suggestedEventType || 'local',
       sport: (showCustomSportInput ? 'all' : newEvent.sport) as SportType,
       description: newEvent.description || '',
       organizer: newEvent.organizer,
@@ -1096,9 +1101,48 @@ export default function Index() {
                   <Input
                     id="location"
                     value={newEvent.location}
-                    onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
-                    placeholder="Например: Центральный парк"
+                    onChange={(e) => {
+                      const location = e.target.value;
+                      setNewEvent({...newEvent, location});
+                      
+                      const isIstra = location.toLowerCase().includes('истр') || 
+                                      location.toLowerCase().includes('istra');
+                      setSuggestedEventType(isIstra ? 'local' : 'away');
+                    }}
+                    placeholder="Например: Центральный парк, г. Истра"
                   />
+                  {suggestedEventType && (
+                    <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <Icon name="Info" size={16} className="text-blue-600 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm text-blue-900">
+                          {suggestedEventType === 'local' 
+                            ? 'Определено как местное мероприятие (на территории м.о. Истра)'
+                            : 'Определено как выездное мероприятие (за пределами м.о. Истра)'}
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={newEvent.eventType === 'local' ? 'default' : 'outline'}
+                            onClick={() => setNewEvent({...newEvent, eventType: 'local'})}
+                          >
+                            <Icon name="MapPin" size={14} className="mr-1" />
+                            Местное
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={newEvent.eventType === 'away' ? 'default' : 'outline'}
+                            onClick={() => setNewEvent({...newEvent, eventType: 'away'})}
+                          >
+                            <Icon name="Plane" size={14} className="mr-1" />
+                            Выездное
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="grid gap-2">
@@ -1448,6 +1492,12 @@ export default function Index() {
                                       <strong>Номер мероприятия:</strong> {event.eventNumber}
                                     </div>
                                   )}
+                                  {event.eventType && (
+                                    <div className="flex items-center gap-2">
+                                      <Icon name={event.eventType === 'local' ? 'MapPin' : 'Plane'} size={18} className="text-primary" />
+                                      <strong>Тип мероприятия:</strong> {event.eventType === 'local' ? 'Местное' : 'Выездное'}
+                                    </div>
+                                  )}
                                   <div className="flex items-center gap-2">
                                     <Icon name="Calendar" size={18} className="text-primary" />
                                     <strong>Дата:</strong> {new Date(event.date).toLocaleDateString('ru-RU')} в {event.time}
@@ -1566,6 +1616,12 @@ export default function Index() {
                                 <strong>Номер мероприятия:</strong> {event.eventNumber}
                               </div>
                             )}
+                            {event.eventType && (
+                              <div className="flex items-center gap-2">
+                                <Icon name={event.eventType === 'local' ? 'MapPin' : 'Plane'} size={18} className="text-primary" />
+                                <strong>Тип мероприятия:</strong> {event.eventType === 'local' ? 'Местное' : 'Выездное'}
+                              </div>
+                            )}
                             <div className="flex items-center gap-2">
                               <Icon name="Calendar" size={18} className="text-primary" />
                               <strong>Дата:</strong> {new Date(event.date).toLocaleDateString('ru-RU')} в {event.time}
@@ -1669,6 +1725,12 @@ export default function Index() {
                               <div className="flex items-center gap-2 bg-primary/10 p-2 rounded">
                                 <Icon name="Hash" size={18} className="text-primary" />
                                 <strong>Номер мероприятия:</strong> {event.eventNumber}
+                              </div>
+                            )}
+                            {event.eventType && (
+                              <div className="flex items-center gap-2">
+                                <Icon name={event.eventType === 'local' ? 'MapPin' : 'Plane'} size={18} className="text-primary" />
+                                <strong>Тип мероприятия:</strong> {event.eventType === 'local' ? 'Местное' : 'Выездное'}
                               </div>
                             )}
                             <div className="flex items-center gap-2">
