@@ -71,8 +71,10 @@ const initialEvents: Event[] = [
     approved: true,
     submittedAt: new Date().toISOString(),
     documents: [
-      { name: 'Положение о забеге.pdf', url: '#' },
-      { name: 'Протокол результатов.pdf', url: '#' }
+      { name: 'Положение о забеге.pdf', url: 'https://storage.poehali.dev/files/demo-race-regulations.pdf' },
+      { name: 'Протокол результатов.pdf', url: 'https://storage.poehali.dev/files/demo-race-results.pdf' },
+      { name: 'Фотоотчёт мероприятия.pdf', url: 'https://storage.poehali.dev/files/demo-race-photo-report.pdf' },
+      { name: 'Список победителей и призёров.xlsx', url: 'https://storage.poehali.dev/files/demo-race-winners.xlsx' }
     ],
     media: [
       { type: 'image', url: 'https://storage.poehali.dev/files/demo-race-1.jpg', name: 'Старт забега' },
