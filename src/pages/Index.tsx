@@ -897,7 +897,7 @@ export default function Index() {
         <header className="text-center mb-12 mt-20 animate-fade-in">
           <div className="flex items-center justify-center gap-6 mb-6">
             <img 
-              src="https://cdn.poehali.dev/projects/7867f842-bbad-4ff0-83bb-b1a44cc1c5c5/files/11aded3d-b9a8-4799-a295-71101f3be201.jpg" 
+              src="https://cdn.poehali.dev/files/70c7c537-7bd0-406b-907d-dc090e56ba00.png" 
               alt="Герб муниципального округа Истра"
               className="w-20 h-20 object-contain"
             />
