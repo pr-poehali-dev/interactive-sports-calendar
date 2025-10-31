@@ -543,8 +543,8 @@ export default function Index() {
                 <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Регистрация</DialogTitle>
-                    <DialogDescription>Для организаторов мероприятий
-(ВНИМАНИЕ! требуется обработка персональных данных)</DialogDescription>
+                    <DialogDescription>Физические лица - организаторы физкультурных мероприятий
+Юридические лица - организаторы физкультурных и спортивных мероприятий</DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
