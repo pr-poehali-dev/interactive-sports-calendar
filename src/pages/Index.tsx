@@ -895,6 +895,18 @@ export default function Index() {
         </div>
         
         <header className="text-center mb-12 mt-20 animate-fade-in">
+          <div className="flex items-center justify-center gap-6 mb-6">
+            <img 
+              src="https://cdn.poehali.dev/projects/7867f842-bbad-4ff0-83bb-b1a44cc1c5c5/files/11aded3d-b9a8-4799-a295-71101f3be201.jpg" 
+              alt="Герб муниципального округа Истра"
+              className="w-20 h-20 object-contain"
+            />
+            <img 
+              src="https://cdn.poehali.dev/projects/7867f842-bbad-4ff0-83bb-b1a44cc1c5c5/files/6feb89f6-6f11-4140-b3cb-691fc24c54f2.jpg" 
+              alt="Герб Московской области"
+              className="w-20 h-20 object-contain"
+            />
+          </div>
           <div className="flex items-center justify-center gap-3 mb-4">
             <Icon name="Trophy" size={48} className="text-primary" />
             <h1 className="text-5xl font-bold bg-gradient-to-b from-white via-blue-500 to-red-600 bg-clip-text text-transparent">Единый календарный план - 2026</h1>
