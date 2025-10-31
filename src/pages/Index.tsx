@@ -14,6 +14,8 @@ import Icon from '@/components/ui/icon';
 
 type SportType = 'all' | 'football' | 'basketball' | 'running' | 'volleyball' | 'tennis' | 'hockey' | 'boxing' | 'wrestling' | 'judo' | 'karate' | 'taekwondo' | 'sambo' | 'gymnastics' | 'swimming' | 'athletics' | 'skiing' | 'biathlon' | 'figureskating' | 'speedskating' | 'chess' | 'badminton' | 'tabletennis' | 'cycling' | 'rowing' | 'shooting' | 'archery' | 'fencing' | 'weightlifting' | 'triathlon' | 'pentathlon' | 'handball' | 'waterpolo' | 'rugby' | 'baseball' | 'softball' | 'golf' | 'equestrian' | 'sailing' | 'surfing' | 'climbing' | 'skateboarding' | 'bmx' | 'mountainbike' | 'freestyleskiing' | 'snowboarding' | 'curling' | 'bobsleigh' | 'luge' | 'skeleton';
 
+type EventLevel = 'municipal' | 'intermunicipal' | 'regional' | 'interregional' | 'cfo' | 'national' | 'european' | 'world';
+
 interface Event {
   id: number;
   eventNumber?: string;
@@ -22,6 +24,7 @@ interface Event {
   time: string;
   location: string;
   eventType?: 'local' | 'away';
+  eventLevel?: EventLevel;
   sport: SportType;
   participants: number;
   maxParticipants: number;
@@ -36,6 +39,17 @@ interface Event {
   media?: { type: 'image' | 'video'; url: string; name: string }[];
 }
 
+const eventLevelNames: Record<EventLevel, string> = {
+  municipal: 'Муниципальное',
+  intermunicipal: 'Межмуниципальное',
+  regional: 'Региональное',
+  interregional: 'Межрегиональное',
+  cfo: 'ЦФО',
+  national: 'Всероссийское',
+  european: 'Европейское',
+  world: 'Мировое'
+};
+
 const initialEvents: Event[] = [
   {
     id: 1,
@@ -45,6 +59,7 @@ const initialEvents: Event[] = [
     time: '10:00',
     location: 'Спортивный комплекс "Истра", ул. Ленина, 1',
     eventType: 'local',
+    eventLevel: 'municipal',
     sport: 'sambo',
     participants: 0,
     maxParticipants: 50,
@@ -63,6 +78,7 @@ const initialEvents: Event[] = [
     id: 2,
     eventNumber: 'МО-2025-002',
     eventType: 'local',
+    eventLevel: 'municipal',
     title: 'Истринский забег',
     date: '2025-10-10',
     time: '09:00',
@@ -299,7 +315,7 @@ export default function Index() {
   };
 
   const handleAddEvent = () => {
-    if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.organizer) {
+    if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.organizer || !newEvent.eventLevel) {
       toast({
         title: "Ошибка",
         description: "Заполните все обязательные поля",
@@ -334,6 +350,7 @@ export default function Index() {
       time: newEvent.time,
       location: newEvent.location,
       eventType: newEvent.eventType || suggestedEventType || 'local',
+      eventLevel: newEvent.eventLevel,
       sport: (showCustomSportInput ? 'all' : newEvent.sport) as SportType,
       description: newEvent.description || '',
       organizer: newEvent.organizer,
@@ -366,6 +383,7 @@ export default function Index() {
       time: '',
       location: '',
       sport: 'running',
+      eventLevel: 'municipal',
       description: '',
       organizer: '',
       maxParticipants: 50,
@@ -1210,6 +1228,25 @@ export default function Index() {
                   )}
                 </div>
                 
+                <div className="grid gap-2">
+                  <Label htmlFor="eventLevel">Статус мероприятия *</Label>
+                  <Select 
+                    value={newEvent.eventLevel} 
+                    onValueChange={(value) => setNewEvent({...newEvent, eventLevel: value as EventLevel})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите статус" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(eventLevelNames).map(([key, name]) => (
+                        <SelectItem key={key} value={key}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="maxParticipants">Ожидаемое кол-во участников</Label>
@@ -1498,6 +1535,12 @@ export default function Index() {
                                       <strong>Тип мероприятия:</strong> {event.eventType === 'local' ? 'Местное' : 'Выездное'}
                                     </div>
                                   )}
+                                  {event.eventLevel && (
+                                    <div className="flex items-center gap-2">
+                                      <Icon name="Award" size={18} className="text-primary" />
+                                      <strong>Статус:</strong> {eventLevelNames[event.eventLevel]}
+                                    </div>
+                                  )}
                                   <div className="flex items-center gap-2">
                                     <Icon name="Calendar" size={18} className="text-primary" />
                                     <strong>Дата:</strong> {new Date(event.date).toLocaleDateString('ru-RU')} в {event.time}
@@ -1622,6 +1665,12 @@ export default function Index() {
                                 <strong>Тип мероприятия:</strong> {event.eventType === 'local' ? 'Местное' : 'Выездное'}
                               </div>
                             )}
+                            {event.eventLevel && (
+                              <div className="flex items-center gap-2">
+                                <Icon name="Award" size={18} className="text-primary" />
+                                <strong>Статус:</strong> {eventLevelNames[event.eventLevel]}
+                              </div>
+                            )}
                             <div className="flex items-center gap-2">
                               <Icon name="Calendar" size={18} className="text-primary" />
                               <strong>Дата:</strong> {new Date(event.date).toLocaleDateString('ru-RU')} в {event.time}
@@ -1731,6 +1780,12 @@ export default function Index() {
                               <div className="flex items-center gap-2">
                                 <Icon name={event.eventType === 'local' ? 'MapPin' : 'Plane'} size={18} className="text-primary" />
                                 <strong>Тип мероприятия:</strong> {event.eventType === 'local' ? 'Местное' : 'Выездное'}
+                              </div>
+                            )}
+                            {event.eventLevel && (
+                              <div className="flex items-center gap-2">
+                                <Icon name="Award" size={18} className="text-primary" />
+                                <strong>Статус:</strong> {eventLevelNames[event.eventLevel]}
                               </div>
                             )}
                             <div className="flex items-center gap-2">
