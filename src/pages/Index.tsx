@@ -902,6 +902,11 @@ export default function Index() {
               className="w-20 h-20 object-contain"
             />
             <img 
+              src="https://cdn.poehali.dev/files/4f1ca257-0059-45f5-9da9-0e74c73d16fb.png" 
+              alt="ГТО - Территория спорта"
+              className="w-32 h-20 object-contain"
+            />
+            <img 
               src="https://cdn.poehali.dev/files/5171b1ba-a553-4f60-9a44-3c3364d0c883.jpg" 
               alt="Мособлспорт"
               className="w-32 h-20 object-contain"
