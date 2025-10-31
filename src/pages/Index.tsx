@@ -1042,7 +1042,7 @@ export default function Index() {
                   </div>
                   
                   <div className="grid gap-2">
-                    <Label htmlFor="maxParticipants">Макс. участников</Label>
+                    <Label htmlFor="maxParticipants">Ожидаемое кол-во участников</Label>
                     <Input
                       id="maxParticipants"
                       type="number"
