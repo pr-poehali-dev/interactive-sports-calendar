@@ -919,7 +919,7 @@ export default function Index() {
           </div>
           <div className="flex items-center justify-center gap-3 mb-4">
             <Icon name="Trophy" size={48} className="text-yellow-500" />
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-blue-700 to-red-600 bg-clip-text text-transparent">Единый календарный план - 2026</h1>
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-blue-700 to-red-600 bg-clip-text text-blue-800">Единый календарный план - 2026</h1>
           </div>
           <p className="text-xl text-gray-700">Физкультурных, спортивных и выездных мероприятий м.о. Истра</p>
         </header>
