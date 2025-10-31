@@ -47,7 +47,12 @@ const initialEvents: Event[] = [
     description: 'Соревнования по самбо среди юношей 2012-2013 года рождения. Регистрация участников до 10 ноября 2025 года.',
     organizer: 'Управление физической культуры и спорта м.о. Истра',
     approved: true,
-    submittedAt: new Date().toISOString()
+    submittedAt: new Date().toISOString(),
+    documents: [
+      { name: 'Положение о первенстве по самбо.pdf', url: '#' },
+      { name: 'Регламент соревнований.pdf', url: '#' },
+      { name: 'Заявка на участие.docx', url: '#' }
+    ]
   },
   {
     id: 2,
@@ -63,7 +68,11 @@ const initialEvents: Event[] = [
     organizer: 'Администрация г.о. Истра',
     result: 'Мероприятие успешно завершено. Приняло участие 87 человек.',
     approved: true,
-    submittedAt: new Date().toISOString()
+    submittedAt: new Date().toISOString(),
+    documents: [
+      { name: 'Положение о забеге.pdf', url: '#' },
+      { name: 'Протокол результатов.pdf', url: '#' }
+    ]
   }
 ];
 
