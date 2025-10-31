@@ -791,7 +791,25 @@ export default function Index() {
                         htmlFor="agree-terms" 
                         className="text-sm font-normal leading-tight cursor-pointer"
                       >
-                        Я согласен(на) на обработку персональных данных и принимаю условия пользовательского соглашения *
+                        Я согласен(на) на{' '}
+                        <a 
+                          href="/privacy-policy" 
+                          target="_blank"
+                          className="text-primary hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          обработку персональных данных
+                        </a>
+                        {' '}и принимаю условия{' '}
+                        <a 
+                          href="/terms-of-service" 
+                          target="_blank"
+                          className="text-primary hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          пользовательского соглашения
+                        </a>
+                        {' '}*
                       </Label>
                     </div>
                   </div>
