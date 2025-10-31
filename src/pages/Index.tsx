@@ -1694,6 +1694,58 @@ export default function Index() {
           </Dialog>
         </div>
 
+        {isAdmin && (
+          <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-fade-in">
+            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium opacity-90">Всего мероприятий</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="text-3xl font-bold">{events.length}</div>
+                  <Icon name="Calendar" size={32} className="opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium opacity-90">Предстоящих</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="text-3xl font-bold">{upcomingEvents.length}</div>
+                  <Icon name="CalendarPlus" size={32} className="opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium opacity-90">Прошедших</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="text-3xl font-bold">{pastEvents.length}</div>
+                  <Icon name="CheckCircle" size={32} className="opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium opacity-90">На модерации</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="text-3xl font-bold">{pendingEvents.length}</div>
+                  <Icon name="Clock" size={32} className="opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <Tabs defaultValue="calendar" className="animate-scale-in bg-slate-50">
           <TabsList className={`grid w-full max-w-2xl mx-auto ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'} mb-8`}>
             <TabsTrigger value="calendar" className="text-lg">
