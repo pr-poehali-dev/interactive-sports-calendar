@@ -216,6 +216,7 @@ export default function Index() {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
   const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ 
     email: '', 
@@ -1643,6 +1644,107 @@ export default function Index() {
                           </div>
                         )}
                         
+                        {event.documents && event.documents.length > 0 && (
+                          <div className="pt-4 border-t">
+                            <h3 className="font-semibold mb-3 flex items-center gap-2">
+                              <Icon name="FileText" size={18} className="text-primary" />
+                              Документы о мероприятии
+                            </h3>
+                            <div className="space-y-2">
+                              {event.documents.map((doc, i) => (
+                                <div key={i} className="flex items-center justify-between p-2 border rounded-md">
+                                  <Button 
+                                    variant="ghost" 
+                                    className="flex-1 justify-start"
+                                    onClick={() => window.open(doc.url, '_blank')}
+                                  >
+                                    <Icon name="Download" size={16} className="mr-2" />
+                                    {doc.name}
+                                  </Button>
+                                  {isAdmin && (
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => {
+                                        const updatedDocs = event.documents?.filter((_, index) => index !== i);
+                                        setEvents(events.map(ev => ev.id === event.id ? {...ev, documents: updatedDocs} : ev));
+                                      }}
+                                    >
+                                      <Icon name="Trash2" size={14} />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {isAdmin && (
+                          <div className="pt-4 border-t">
+                            <h3 className="font-semibold mb-3 flex items-center gap-2">
+                              <Icon name="FilePlus" size={18} className="text-primary" />
+                              Загрузить документы
+                            </h3>
+                            <Input
+                              type="file"
+                              multiple
+                              accept=".pdf,.doc,.docx,.xls,.xlsx"
+                              disabled={isUploadingDoc}
+                              onChange={async (e) => {
+                                const files = Array.from(e.target.files || []);
+                                if (files.length === 0) return;
+                                
+                                setIsUploadingDoc(true);
+                                const uploadedDocs: { name: string; url: string }[] = event.documents || [];
+                                
+                                try {
+                                  for (const file of files) {
+                                    const reader = new FileReader();
+                                    const fileContent = await new Promise<string>((resolve) => {
+                                      reader.onload = () => {
+                                        const base64 = (reader.result as string).split(',')[1];
+                                        resolve(base64);
+                                      };
+                                      reader.readAsDataURL(file);
+                                    });
+                                    
+                                    const response = await fetch('https://functions.poehali.dev/d33abef9-76df-4869-9223-096e3c85c33f', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        fileName: file.name,
+                                        fileContent: fileContent,
+                                        fileType: 'document'
+                                      })
+                                    });
+                                    
+                                    const result = await response.json();
+                                    uploadedDocs.push({ name: file.name, url: result.url });
+                                  }
+                                  
+                                  setEvents(events.map(e => e.id === event.id ? {...e, documents: uploadedDocs} : e));
+                                  toast({
+                                    title: "Документы загружены",
+                                    description: `Загружено ${files.length} файл(ов)`
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: "Ошибка загрузки",
+                                    description: "Не удалось загрузить файлы",
+                                    variant: "destructive"
+                                  });
+                                } finally {
+                                  setIsUploadingDoc(false);
+                                }
+                              }}
+                              className="cursor-pointer mb-2"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              {isUploadingDoc ? 'Загрузка документов...' : 'PDF, Word, Excel файлы'}
+                            </p>
+                          </div>
+                        )}
+                        
                         {isAdmin && (
                           <div className="pt-4 border-t">
                             <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -1702,10 +1804,10 @@ export default function Index() {
                                   setIsUploading(false);
                                 }
                               }}
-                              className="cursor-pointer"
+                              className="cursor-pointer mb-2"
                             />
-                            <p className="text-xs text-muted-foreground mt-2">
-                              {isUploading ? 'Загрузка файлов...' : 'Загрузите фото и видео с мероприятия'}
+                            <p className="text-xs text-muted-foreground">
+                              {isUploading ? 'Загрузка файлов...' : 'Фото и видео с мероприятия'}
                             </p>
                           </div>
                         )}
