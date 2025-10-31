@@ -1266,6 +1266,22 @@ export default function Index() {
                                   </div>
                                 </DialogDescription>
                               </DialogHeader>
+                              <div className="pt-4 border-t">
+                                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                                  <Icon name="FileText" size={18} className="text-primary" />
+                                  Документы о мероприятии
+                                </h3>
+                                <div className="space-y-2">
+                                  <Button variant="outline" className="w-full justify-start">
+                                    <Icon name="Download" size={16} className="mr-2" />
+                                    Положение о соревнованиях.pdf
+                                  </Button>
+                                  <Button variant="outline" className="w-full justify-start">
+                                    <Icon name="Download" size={16} className="mr-2" />
+                                    Регламент мероприятия.pdf
+                                  </Button>
+                                </div>
+                              </div>
                             </DialogContent>
                           </Dialog>
                         </CardContent>
@@ -1358,6 +1374,22 @@ export default function Index() {
                             </div>
                           </DialogDescription>
                         </DialogHeader>
+                        <div className="pt-4 border-t">
+                          <h3 className="font-semibold mb-3 flex items-center gap-2">
+                            <Icon name="FileText" size={18} className="text-primary" />
+                            Документы о мероприятии
+                          </h3>
+                          <div className="space-y-2">
+                            <Button variant="outline" className="w-full justify-start">
+                              <Icon name="Download" size={16} className="mr-2" />
+                              Положение о соревнованиях.pdf
+                            </Button>
+                            <Button variant="outline" className="w-full justify-start">
+                              <Icon name="Download" size={16} className="mr-2" />
+                              Регламент мероприятия.pdf
+                            </Button>
+                          </div>
+                        </div>
                       </DialogContent>
                     </Dialog>
                   </CardContent>
