@@ -206,6 +206,8 @@ export default function Index() {
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
+  const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ 
     email: '', 
@@ -1589,11 +1591,55 @@ export default function Index() {
                           </DialogDescription>
                         </DialogHeader>
                         
+                        {event.media && event.media.length > 0 && (
+                          <div className="pt-4 border-t">
+                            <h3 className="font-semibold mb-3 flex items-center gap-2">
+                              <Icon name="Images" size={18} className="text-primary" />
+                              Фото и видео с мероприятия
+                            </h3>
+                            <div className="grid grid-cols-4 gap-2">
+                              {event.media.map((item, i) => (
+                                <div 
+                                  key={i} 
+                                  className="relative group cursor-pointer"
+                                  onClick={() => {
+                                    setSelectedEvent(event);
+                                    setSelectedMediaIndex(i);
+                                    setIsMediaViewerOpen(true);
+                                  }}
+                                >
+                                  <div className="aspect-square bg-muted rounded-md flex items-center justify-center hover:bg-muted/80 transition-colors">
+                                    {item.type === 'image' ? (
+                                      <Icon name="Image" size={24} className="text-muted-foreground" />
+                                    ) : (
+                                      <Icon name="Video" size={24} className="text-muted-foreground" />
+                                    )}
+                                  </div>
+                                  {isAdmin && (
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const updatedMedia = event.media?.filter((_, index) => index !== i);
+                                        setEvents(events.map(ev => ev.id === event.id ? {...ev, media: updatedMedia} : ev));
+                                      }}
+                                    >
+                                      <Icon name="Trash2" size={14} />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
                         {isAdmin && (
                           <div className="pt-4 border-t">
                             <h3 className="font-semibold mb-3 flex items-center gap-2">
                               <Icon name="ImagePlus" size={18} className="text-primary" />
-                              Фото и видео с мероприятия
+                              Загрузить медиа
                             </h3>
                             <Input
                               type="file"
@@ -1648,36 +1694,11 @@ export default function Index() {
                                   setIsUploading(false);
                                 }
                               }}
-                              className="cursor-pointer mb-3"
+                              className="cursor-pointer"
                             />
-                            {event.media && event.media.length > 0 && (
-                              <div className="grid grid-cols-3 gap-2 mt-3">
-                                {event.media.map((item, i) => (
-                                  <div key={i} className="relative group">
-                                    {item.type === 'image' ? (
-                                      <div className="aspect-square bg-muted rounded-md flex items-center justify-center">
-                                        <Icon name="Image" size={24} className="text-muted-foreground" />
-                                      </div>
-                                    ) : (
-                                      <div className="aspect-square bg-muted rounded-md flex items-center justify-center">
-                                        <Icon name="Video" size={24} className="text-muted-foreground" />
-                                      </div>
-                                    )}
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onClick={() => {
-                                        const updatedMedia = event.media?.filter((_, index) => index !== i);
-                                        setEvents(events.map(e => e.id === event.id ? {...e, media: updatedMedia} : e));
-                                      }}
-                                    >
-                                      <Icon name="Trash2" size={14} />
-                                    </Button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {isUploading ? 'Загрузка файлов...' : 'Загрузите фото и видео с мероприятия'}
+                            </p>
                           </div>
                         )}
                       </DialogContent>
@@ -1799,6 +1820,80 @@ export default function Index() {
           </Card>
         </section>
       </div>
+      
+      {/* Media Viewer Dialog */}
+      {isMediaViewerOpen && selectedEvent && selectedEvent.media && selectedMediaIndex !== null && (
+        <Dialog open={isMediaViewerOpen} onOpenChange={setIsMediaViewerOpen}>
+          <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span>{selectedEvent.title}</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  {selectedMediaIndex + 1} / {selectedEvent.media.length}
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="flex-1 flex items-center justify-center bg-black/5 rounded-lg relative">
+              {selectedEvent.media[selectedMediaIndex].type === 'image' ? (
+                <div className="w-full h-full flex items-center justify-center p-4">
+                  <div className="bg-muted rounded-lg p-8 flex items-center justify-center">
+                    <Icon name="Image" size={64} className="text-muted-foreground" />
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center p-4">
+                  <div className="bg-muted rounded-lg p-8 flex items-center justify-center">
+                    <Icon name="Video" size={64} className="text-muted-foreground" />
+                  </div>
+                </div>
+              )}
+              
+              {/* Navigation buttons */}
+              {selectedMediaIndex > 0 && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute left-4 top-1/2 -translate-y-1/2"
+                  onClick={() => setSelectedMediaIndex(selectedMediaIndex - 1)}
+                >
+                  <Icon name="ChevronLeft" size={24} />
+                </Button>
+              )}
+              
+              {selectedMediaIndex < selectedEvent.media.length - 1 && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute right-4 top-1/2 -translate-y-1/2"
+                  onClick={() => setSelectedMediaIndex(selectedMediaIndex + 1)}
+                >
+                  <Icon name="ChevronRight" size={24} />
+                </Button>
+              )}
+            </div>
+            
+            {/* Thumbnails */}
+            <div className="flex gap-2 overflow-x-auto py-2">
+              {selectedEvent.media.map((item, i) => (
+                <button
+                  key={i}
+                  className={`flex-shrink-0 w-16 h-16 rounded-md flex items-center justify-center ${
+                    i === selectedMediaIndex ? 'ring-2 ring-primary bg-muted' : 'bg-muted/50'
+                  }`}
+                  onClick={() => setSelectedMediaIndex(i)}
+                >
+                  {item.type === 'image' ? (
+                    <Icon name="Image" size={20} className="text-muted-foreground" />
+                  ) : (
+                    <Icon name="Video" size={20} className="text-muted-foreground" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
