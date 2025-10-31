@@ -47,6 +47,22 @@ const initialEvents: Event[] = [
     organizer: 'Управление физической культуры и спорта м.о. Истра',
     approved: true,
     submittedAt: new Date().toISOString()
+  },
+  {
+    id: 2,
+    title: 'Истринский забег',
+    date: '2025-10-10',
+    time: '09:00',
+    location: 'Центральный парк г. Истра',
+    sport: 'running',
+    participants: 0,
+    maxParticipants: 100,
+    status: 'past',
+    description: 'Традиционный городской забег на 5 км и 10 км.',
+    organizer: 'Администрация г.о. Истра',
+    result: 'Мероприятие успешно завершено. Приняло участие 87 человек.',
+    approved: true,
+    submittedAt: new Date().toISOString()
   }
 ];
 
