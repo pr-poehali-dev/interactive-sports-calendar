@@ -16,6 +16,7 @@ type SportType = 'all' | 'football' | 'basketball' | 'running' | 'volleyball' | 
 
 interface Event {
   id: number;
+  eventNumber?: string;
   title: string;
   date: string;
   time: string;
@@ -37,6 +38,7 @@ interface Event {
 const initialEvents: Event[] = [
   {
     id: 1,
+    eventNumber: 'МО-2025-001',
     title: 'Первенство муниципального округа Истра по самбо среди юношей 2012-2013 года рождения',
     date: '2025-11-15',
     time: '10:00',
@@ -57,6 +59,7 @@ const initialEvents: Event[] = [
   },
   {
     id: 2,
+    eventNumber: 'МО-2025-002',
     title: 'Истринский забег',
     date: '2025-10-10',
     time: '09:00',
@@ -292,8 +295,13 @@ export default function Index() {
       return;
     }
     
+    const newId = Math.max(...events.map(e => e.id), 0) + 1;
+    const year = new Date(newEvent.date).getFullYear();
+    const eventNumber = `МО-${year}-${String(newId).padStart(3, '0')}`;
+    
     const eventToAdd: Event = {
-      id: Math.max(...events.map(e => e.id), 0) + 1,
+      id: newId,
+      eventNumber: eventNumber,
       title: newEvent.title,
       date: newEvent.date,
       time: newEvent.time,
@@ -1359,6 +1367,12 @@ export default function Index() {
                                   {event.title}
                                 </DialogTitle>
                                 <DialogDescription className="text-base space-y-3 pt-4">
+                                  {event.eventNumber && (
+                                    <div className="flex items-center gap-2 bg-primary/10 p-2 rounded">
+                                      <Icon name="Hash" size={18} className="text-primary" />
+                                      <strong>Номер мероприятия:</strong> {event.eventNumber}
+                                    </div>
+                                  )}
                                   <div className="flex items-center gap-2">
                                     <Icon name="Calendar" size={18} className="text-primary" />
                                     <strong>Дата:</strong> {new Date(event.date).toLocaleDateString('ru-RU')} в {event.time}
@@ -1471,6 +1485,12 @@ export default function Index() {
                             {event.title}
                           </DialogTitle>
                           <DialogDescription className="text-base space-y-3 pt-4">
+                            {event.eventNumber && (
+                              <div className="flex items-center gap-2 bg-primary/10 p-2 rounded">
+                                <Icon name="Hash" size={18} className="text-primary" />
+                                <strong>Номер мероприятия:</strong> {event.eventNumber}
+                              </div>
+                            )}
                             <div className="flex items-center gap-2">
                               <Icon name="Calendar" size={18} className="text-primary" />
                               <strong>Дата:</strong> {new Date(event.date).toLocaleDateString('ru-RU')} в {event.time}
@@ -1570,6 +1590,12 @@ export default function Index() {
                             {event.title}
                           </DialogTitle>
                           <DialogDescription className="text-base space-y-3 pt-4">
+                            {event.eventNumber && (
+                              <div className="flex items-center gap-2 bg-primary/10 p-2 rounded">
+                                <Icon name="Hash" size={18} className="text-primary" />
+                                <strong>Номер мероприятия:</strong> {event.eventNumber}
+                              </div>
+                            )}
                             <div className="flex items-center gap-2">
                               <Icon name="Calendar" size={18} className="text-primary" />
                               <strong>Дата:</strong> {new Date(event.date).toLocaleDateString('ru-RU')}
