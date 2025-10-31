@@ -512,7 +512,7 @@ export default function Index() {
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="register-name">Имя *</Label>
+                      <Label htmlFor="register-name">Фамилия Имя Отчество *</Label>
                       <Input
                         id="register-name"
                         value={registerForm.name}
