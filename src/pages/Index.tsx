@@ -899,17 +899,17 @@ export default function Index() {
             <img 
               src="https://cdn.poehali.dev/files/70c7c537-7bd0-406b-907d-dc090e56ba00.png" 
               alt="Герб муниципального округа Истра"
-              className="w-20 h-20 object-contain"
+              className="h-24 w-auto object-contain"
             />
             <img 
               src="https://cdn.poehali.dev/files/4f1ca257-0059-45f5-9da9-0e74c73d16fb.png" 
               alt="ГТО - Территория спорта"
-              className="w-32 h-20 object-contain"
+              className="h-24 w-auto object-contain"
             />
             <img 
               src="https://cdn.poehali.dev/files/5171b1ba-a553-4f60-9a44-3c3364d0c883.jpg" 
               alt="Мособлспорт"
-              className="w-32 h-20 object-contain"
+              className="h-24 w-auto object-contain"
             />
           </div>
           <div className="flex items-center justify-center gap-3 mb-4">
