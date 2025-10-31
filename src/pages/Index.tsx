@@ -31,7 +31,23 @@ interface Event {
   submittedAt: string;
 }
 
-const initialEvents: Event[] = [];
+const initialEvents: Event[] = [
+  {
+    id: 1,
+    title: 'Первенство муниципального округа Истра по самбо среди юношей 2012-2013 года рождения',
+    date: '2025-11-15',
+    time: '10:00',
+    location: 'Спортивный комплекс "Истра", ул. Ленина, 1',
+    sport: 'sambo',
+    participants: 0,
+    maxParticipants: 50,
+    status: 'upcoming',
+    description: 'Соревнования по самбо среди юношей 2012-2013 года рождения. Регистрация участников до 10 ноября 2025 года.',
+    organizer: 'Управление физической культуры и спорта м.о. Истра',
+    approved: true,
+    submittedAt: new Date().toISOString()
+  }
+];
 
 const sportIcons: Record<SportType, string> = {
   all: 'Trophy',
