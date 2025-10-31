@@ -1177,12 +1177,24 @@ export default function Index() {
                       {isUploading ? 'Загрузка файлов...' : 'Загрузите положение, регламент и другие документы (PDF, DOC, DOCX)'}
                     </p>
                     {newEvent.documents && newEvent.documents.length > 0 && (
-                      <div className="space-y-1 text-sm">
-                        <p className="font-semibold">Прикреплённые файлы:</p>
+                      <div className="space-y-1">
+                        <p className="font-semibold text-sm">Прикреплённые файлы:</p>
                         {newEvent.documents.map((doc, i) => (
-                          <div key={i} className="flex items-center gap-2 text-muted-foreground">
-                            <Icon name="FileText" size={14} />
-                            {doc.name}
+                          <div key={i} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Icon name="FileText" size={14} />
+                              {doc.name}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const updatedDocs = newEvent.documents?.filter((_, index) => index !== i);
+                                setNewEvent({...newEvent, documents: updatedDocs});
+                              }}
+                            >
+                              <Icon name="X" size={16} className="text-destructive" />
+                            </Button>
                           </div>
                         ))}
                       </div>
