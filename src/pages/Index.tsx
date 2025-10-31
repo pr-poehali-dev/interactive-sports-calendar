@@ -23,6 +23,7 @@ interface Event {
   sport: SportType;
   participants: number;
   maxParticipants: number;
+  maxSpectators?: number;
   status: 'upcoming' | 'past';
   description: string;
   organizer: string;
@@ -1015,32 +1016,32 @@ export default function Index() {
                   />
                 </div>
                 
+                <div className="grid gap-2">
+                  <Label htmlFor="sport">Вид спорта *</Label>
+                  <Select 
+                    value={newEvent.sport} 
+                    onValueChange={(value) => setNewEvent({...newEvent, sport: value as SportType})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(sportNames)
+                        .filter(([key]) => key !== 'all')
+                        .sort((a, b) => a[1].localeCompare(b[1], 'ru'))
+                        .map(([key, name]) => (
+                          <SelectItem key={key} value={key}>
+                            <div className="flex items-center gap-2">
+                              <Icon name={sportIcons[key as SportType]} size={16} />
+                              {name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="sport">Вид спорта *</Label>
-                    <Select 
-                      value={newEvent.sport} 
-                      onValueChange={(value) => setNewEvent({...newEvent, sport: value as SportType})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(sportNames)
-                          .filter(([key]) => key !== 'all')
-                          .sort((a, b) => a[1].localeCompare(b[1], 'ru'))
-                          .map(([key, name]) => (
-                            <SelectItem key={key} value={key}>
-                              <div className="flex items-center gap-2">
-                                <Icon name={sportIcons[key as SportType]} size={16} />
-                                {name}
-                              </div>
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
                   <div className="grid gap-2">
                     <Label htmlFor="maxParticipants">Ожидаемое кол-во участников</Label>
                     <Input
@@ -1049,6 +1050,18 @@ export default function Index() {
                       value={newEvent.maxParticipants}
                       onChange={(e) => setNewEvent({...newEvent, maxParticipants: parseInt(e.target.value) || 50})}
                       min="1"
+                    />
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="maxSpectators">Максимальное кол-во зрителей</Label>
+                    <Input
+                      id="maxSpectators"
+                      type="number"
+                      value={newEvent.maxSpectators || ''}
+                      onChange={(e) => setNewEvent({...newEvent, maxSpectators: e.target.value ? parseInt(e.target.value) : undefined})}
+                      min="1"
+                      placeholder="Не ограничено"
                     />
                   </div>
                 </div>
