@@ -508,12 +508,12 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-blue-50 to-red-50">
-      <div className="fixed top-0 left-0 right-0 h-3 z-50 flex">
+      <div className="fixed top-0 left-0 right-0 h-8 z-50 flex shadow-md">
         <div className="flex-1 bg-white"></div>
         <div className="flex-1 bg-blue-600"></div>
         <div className="flex-1 bg-red-600"></div>
       </div>
-      <div className="container mx-auto px-4 py-8 pt-12 bg-slate-50">
+      <div className="container mx-auto px-4 py-8 pt-16 bg-slate-50">
         <div className="absolute top-4 right-4 flex gap-2 items-center z-50">
           {!isLoggedIn && !isAdmin && (
             <>
