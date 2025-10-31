@@ -1260,23 +1260,6 @@ export default function Index() {
                                   </div>
                                 </DialogDescription>
                               </DialogHeader>
-                              <div className="pt-4">
-                                {registeredEvents.includes(event.id) ? (
-                                  <Button disabled className="w-full" variant="outline">
-                                    <Icon name="CheckCircle" size={18} className="mr-2" />
-                                    Вы зарегистрированы
-                                  </Button>
-                                ) : (
-                                  <Button 
-                                    className="w-full bg-gradient-to-r from-primary to-secondary"
-                                    onClick={() => handleRegister(event.id)}
-                                    disabled={event.participants >= event.maxParticipants}
-                                  >
-                                    <Icon name="UserPlus" size={18} className="mr-2" />
-                                    Зарегистрироваться
-                                  </Button>
-                                )}
-                              </div>
                             </DialogContent>
                           </Dialog>
                         </CardContent>
@@ -1402,23 +1385,6 @@ export default function Index() {
                             </div>
                           </DialogDescription>
                         </DialogHeader>
-                        <div className="pt-4">
-                          {registeredEvents.includes(event.id) ? (
-                            <Button disabled className="w-full" variant="outline">
-                              <Icon name="CheckCircle" size={18} className="mr-2" />
-                              Вы зарегистрированы
-                            </Button>
-                          ) : (
-                            <Button 
-                              className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
-                              onClick={() => handleRegister(event.id)}
-                              disabled={event.participants >= event.maxParticipants}
-                            >
-                              <Icon name="UserPlus" size={18} className="mr-2" />
-                              Зарегистрироваться
-                            </Button>
-                          )}
-                        </div>
                       </DialogContent>
                     </Dialog>
                   </CardContent>
