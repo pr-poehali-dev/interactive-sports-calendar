@@ -573,7 +573,7 @@ export default function Index() {
         <div className="flex-1 bg-red-600"></div>
       </div>
       <div className="container mx-auto px-4 py-8 pt-16 bg-slate-50">
-        <div className="absolute top-4 right-4 flex gap-2 items-center z-50">
+        <div className="absolute top-12 right-4 flex gap-2 items-center z-50">
           {!isLoggedIn && !isAdmin && (
             <>
               <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
