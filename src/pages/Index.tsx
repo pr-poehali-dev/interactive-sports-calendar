@@ -31,6 +31,7 @@ interface Event {
   approved: boolean;
   submittedAt: string;
   documents?: { name: string; url: string }[];
+  media?: { type: 'image' | 'video'; url: string; name: string }[];
 }
 
 const initialEvents: Event[] = [
@@ -1587,6 +1588,98 @@ export default function Index() {
                             </div>
                           </DialogDescription>
                         </DialogHeader>
+                        
+                        {isAdmin && (
+                          <div className="pt-4 border-t">
+                            <h3 className="font-semibold mb-3 flex items-center gap-2">
+                              <Icon name="ImagePlus" size={18} className="text-primary" />
+                              Фото и видео с мероприятия
+                            </h3>
+                            <Input
+                              type="file"
+                              multiple
+                              accept="image/*,video/*"
+                              disabled={isUploading}
+                              onChange={async (e) => {
+                                const files = Array.from(e.target.files || []);
+                                if (files.length === 0) return;
+                                
+                                setIsUploading(true);
+                                const uploadedMedia: { type: 'image' | 'video'; url: string; name: string }[] = event.media || [];
+                                
+                                try {
+                                  for (const file of files) {
+                                    const fileType = file.type.startsWith('image/') ? 'image' : 'video';
+                                    const reader = new FileReader();
+                                    const fileContent = await new Promise<string>((resolve) => {
+                                      reader.onload = () => {
+                                        const base64 = (reader.result as string).split(',')[1];
+                                        resolve(base64);
+                                      };
+                                      reader.readAsDataURL(file);
+                                    });
+                                    
+                                    const response = await fetch('https://functions.poehali.dev/d33abef9-76df-4869-9223-096e3c85c33f', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        fileName: file.name,
+                                        fileContent: fileContent,
+                                        fileType: fileType
+                                      })
+                                    });
+                                    
+                                    const result = await response.json();
+                                    uploadedMedia.push({ type: fileType, url: result.url, name: file.name });
+                                  }
+                                  
+                                  setEvents(events.map(e => e.id === event.id ? {...e, media: uploadedMedia} : e));
+                                  toast({
+                                    title: "Медиа загружены",
+                                    description: `Загружено ${files.length} файл(ов)`
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: "Ошибка загрузки",
+                                    description: "Не удалось загрузить файлы",
+                                    variant: "destructive"
+                                  });
+                                } finally {
+                                  setIsUploading(false);
+                                }
+                              }}
+                              className="cursor-pointer mb-3"
+                            />
+                            {event.media && event.media.length > 0 && (
+                              <div className="grid grid-cols-3 gap-2 mt-3">
+                                {event.media.map((item, i) => (
+                                  <div key={i} className="relative group">
+                                    {item.type === 'image' ? (
+                                      <div className="aspect-square bg-muted rounded-md flex items-center justify-center">
+                                        <Icon name="Image" size={24} className="text-muted-foreground" />
+                                      </div>
+                                    ) : (
+                                      <div className="aspect-square bg-muted rounded-md flex items-center justify-center">
+                                        <Icon name="Video" size={24} className="text-muted-foreground" />
+                                      </div>
+                                    )}
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={() => {
+                                        const updatedMedia = event.media?.filter((_, index) => index !== i);
+                                        setEvents(events.map(e => e.id === event.id ? {...e, media: updatedMedia} : e));
+                                      }}
+                                    >
+                                      <Icon name="Trash2" size={14} />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </DialogContent>
                     </Dialog>
                   </CardContent>
