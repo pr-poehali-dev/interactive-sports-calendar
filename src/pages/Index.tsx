@@ -73,6 +73,14 @@ const initialEvents: Event[] = [
     documents: [
       { name: 'Положение о забеге.pdf', url: '#' },
       { name: 'Протокол результатов.pdf', url: '#' }
+    ],
+    media: [
+      { type: 'image', url: 'https://storage.poehali.dev/files/demo-race-1.jpg', name: 'Старт забега' },
+      { type: 'image', url: 'https://storage.poehali.dev/files/demo-race-2.jpg', name: 'Участники на дистанции' },
+      { type: 'image', url: 'https://storage.poehali.dev/files/demo-race-3.jpg', name: 'Награждение победителей' },
+      { type: 'video', url: 'https://storage.poehali.dev/files/demo-race-video.mp4', name: 'Видеообзор мероприятия' },
+      { type: 'image', url: 'https://storage.poehali.dev/files/demo-race-4.jpg', name: 'Массовый старт' },
+      { type: 'image', url: 'https://storage.poehali.dev/files/demo-race-5.jpg', name: 'Финишная прямая' }
     ]
   }
 ];
