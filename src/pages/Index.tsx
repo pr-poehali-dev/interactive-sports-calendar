@@ -1134,10 +1134,10 @@ export default function Index() {
                         disabled={day.date === 0}
                         onClick={() => day.date > 0 && setSelectedDate(day.date > 0 ? `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}` : null)}
                         className={`
-                          aspect-square p-2 rounded-lg text-center transition-all duration-200
+                          aspect-square p-2 rounded-lg text-center transition-all duration-200 text-blue-700
                           ${day.date === 0 ? 'invisible' : ''}
                           ${day.isToday ? 'ring-2 ring-accent font-bold' : ''}
-                          ${day.hasEvents ? 'bg-gradient-to-br from-blue-100 to-blue-200 font-semibold hover:from-blue-200 hover:to-blue-300 text-blue-900' : 'hover:bg-blue-50'}
+                          ${day.hasEvents ? 'bg-gradient-to-br from-blue-100 to-blue-200 font-semibold hover:from-blue-200 hover:to-blue-300' : 'hover:bg-blue-50'}
                           ${selectedDate === `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}` ? 'bg-blue-600 text-white hover:bg-blue-600' : ''}
                         `}
                       >
