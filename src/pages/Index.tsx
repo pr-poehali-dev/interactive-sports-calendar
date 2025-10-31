@@ -924,7 +924,7 @@ export default function Index() {
           <p className="text-xl text-gray-700">Физкультурных, спортивных и выездных мероприятий м.о. Истра</p>
         </header>
 
-        <div className="mb-8 flex flex-wrap gap-4 justify-center items-center animate-slide-up">
+        <div className="mb-8 flex flex-wrap gap-4 justify-center items-center animate-slide-up bg-slate-900">
           <Select value={selectedSport} onValueChange={(value) => setSelectedSport(value as SportType)}>
             <SelectTrigger className="w-[200px] border-2 hover:border-primary transition-colors">
               <SelectValue placeholder="Вид спорта" />
