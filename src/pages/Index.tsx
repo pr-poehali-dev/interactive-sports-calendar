@@ -30,6 +30,7 @@ interface Event {
   result?: string;
   approved: boolean;
   submittedAt: string;
+  documents?: { name: string; url: string }[];
 }
 
 const initialEvents: Event[] = [
@@ -1104,6 +1105,36 @@ export default function Index() {
                     rows={4}
                   />
                 </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="documents">Документы мероприятия</Label>
+                  <div className="space-y-2">
+                    <Input
+                      id="documents"
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        const docs = files.map(f => ({ name: f.name, url: URL.createObjectURL(f) }));
+                        setNewEvent({...newEvent, documents: docs});
+                      }}
+                      className="cursor-pointer"
+                    />
+                    <p className="text-xs text-muted-foreground">Загрузите положение, регламент и другие документы (PDF, DOC, DOCX)</p>
+                    {newEvent.documents && newEvent.documents.length > 0 && (
+                      <div className="space-y-1 text-sm">
+                        <p className="font-semibold">Прикреплённые файлы:</p>
+                        {newEvent.documents.map((doc, i) => (
+                          <div key={i} className="flex items-center gap-2 text-muted-foreground">
+                            <Icon name="FileText" size={14} />
+                            {doc.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               
               <div className="flex gap-2 justify-end">
@@ -1266,22 +1297,27 @@ export default function Index() {
                                   </div>
                                 </DialogDescription>
                               </DialogHeader>
-                              <div className="pt-4 border-t">
-                                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                                  <Icon name="FileText" size={18} className="text-primary" />
-                                  Документы о мероприятии
-                                </h3>
-                                <div className="space-y-2">
-                                  <Button variant="outline" className="w-full justify-start">
-                                    <Icon name="Download" size={16} className="mr-2" />
-                                    Положение о соревнованиях.pdf
-                                  </Button>
-                                  <Button variant="outline" className="w-full justify-start">
-                                    <Icon name="Download" size={16} className="mr-2" />
-                                    Регламент мероприятия.pdf
-                                  </Button>
+                              {event.documents && event.documents.length > 0 && (
+                                <div className="pt-4 border-t">
+                                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                                    <Icon name="FileText" size={18} className="text-primary" />
+                                    Документы о мероприятии
+                                  </h3>
+                                  <div className="space-y-2">
+                                    {event.documents.map((doc, i) => (
+                                      <Button 
+                                        key={i}
+                                        variant="outline" 
+                                        className="w-full justify-start"
+                                        onClick={() => window.open(doc.url, '_blank')}
+                                      >
+                                        <Icon name="Download" size={16} className="mr-2" />
+                                        {doc.name}
+                                      </Button>
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
+                              )}
                             </DialogContent>
                           </Dialog>
                         </CardContent>
@@ -1374,22 +1410,27 @@ export default function Index() {
                             </div>
                           </DialogDescription>
                         </DialogHeader>
-                        <div className="pt-4 border-t">
-                          <h3 className="font-semibold mb-3 flex items-center gap-2">
-                            <Icon name="FileText" size={18} className="text-primary" />
-                            Документы о мероприятии
-                          </h3>
-                          <div className="space-y-2">
-                            <Button variant="outline" className="w-full justify-start">
-                              <Icon name="Download" size={16} className="mr-2" />
-                              Положение о соревнованиях.pdf
-                            </Button>
-                            <Button variant="outline" className="w-full justify-start">
-                              <Icon name="Download" size={16} className="mr-2" />
-                              Регламент мероприятия.pdf
-                            </Button>
+                        {event.documents && event.documents.length > 0 && (
+                          <div className="pt-4 border-t">
+                            <h3 className="font-semibold mb-3 flex items-center gap-2">
+                              <Icon name="FileText" size={18} className="text-primary" />
+                              Документы о мероприятии
+                            </h3>
+                            <div className="space-y-2">
+                              {event.documents.map((doc, i) => (
+                                <Button 
+                                  key={i}
+                                  variant="outline" 
+                                  className="w-full justify-start"
+                                  onClick={() => window.open(doc.url, '_blank')}
+                                >
+                                  <Icon name="Download" size={16} className="mr-2" />
+                                  {doc.name}
+                                </Button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </DialogContent>
                     </Dialog>
                   </CardContent>
