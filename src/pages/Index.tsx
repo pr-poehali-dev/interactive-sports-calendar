@@ -275,6 +275,8 @@ export default function Index() {
   const [suggestedEventType, setSuggestedEventType] = useState<'local' | 'away' | null>(null);
   const [manualEventNumber, setManualEventNumber] = useState('');
   const [showManualEventNumber, setShowManualEventNumber] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
     date: '',
@@ -434,6 +436,94 @@ export default function Index() {
         variant: "destructive"
       });
     }
+  };
+  
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event);
+    setNewEvent({
+      title: event.title,
+      date: event.date,
+      time: event.time,
+      location: event.location,
+      sport: event.sport,
+      eventType: event.eventType,
+      eventLevel: event.eventLevel,
+      description: event.description,
+      organizer: event.organizer,
+      maxParticipants: event.maxParticipants,
+      maxSpectators: event.maxSpectators,
+      status: event.status
+    });
+    setManualEventNumber(event.eventNumber || '');
+    const needsManualNumber = !(event.eventType === 'local' && (event.eventLevel === 'municipal' || event.eventLevel === 'intermunicipal'));
+    setShowManualEventNumber(needsManualNumber);
+    setIsEditDialogOpen(true);
+  };
+  
+  const handleSaveEdit = () => {
+    if (!editingEvent) return;
+    
+    if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.organizer || !newEvent.eventLevel) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните все обязательные поля",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const eventType = newEvent.eventType || 'local';
+    const eventLevel = newEvent.eventLevel;
+    const isAutoNumber = eventType === 'local' && (eventLevel === 'municipal' || eventLevel === 'intermunicipal');
+    
+    let finalEventNumber: string | undefined;
+    if (isAutoNumber) {
+      finalEventNumber = editingEvent.eventNumber;
+    } else if (manualEventNumber.trim()) {
+      finalEventNumber = manualEventNumber.trim();
+    }
+    
+    const updatedEvent: Event = {
+      ...editingEvent,
+      title: newEvent.title,
+      date: newEvent.date,
+      time: newEvent.time,
+      location: newEvent.location,
+      eventType: eventType,
+      eventLevel: newEvent.eventLevel,
+      sport: newEvent.sport as SportType,
+      description: newEvent.description || '',
+      organizer: newEvent.organizer,
+      maxParticipants: newEvent.maxParticipants || 50,
+      maxSpectators: newEvent.maxSpectators,
+      eventNumber: finalEventNumber
+    };
+    
+    setEvents(events.map(e => e.id === editingEvent.id ? updatedEvent : e));
+    setIsEditDialogOpen(false);
+    setEditingEvent(null);
+    
+    setNewEvent({
+      title: '',
+      date: '',
+      time: '',
+      location: '',
+      sport: 'running',
+      eventLevel: 'municipal',
+      description: '',
+      organizer: '',
+      maxParticipants: 50,
+      maxSpectators: undefined,
+      participants: 0,
+      status: 'upcoming'
+    });
+    setManualEventNumber('');
+    setShowManualEventNumber(false);
+    
+    toast({
+      title: "Изменения сохранены",
+      description: `Мероприятие "${updatedEvent.title}" обновлено`
+    });
   };
   
   const handleAdminLogin = () => {
@@ -1437,6 +1527,171 @@ export default function Index() {
               </div>
             </DialogContent>
           </Dialog>
+          
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Редактирование мероприятия</DialogTitle>
+                <DialogDescription>
+                  Внесите изменения в информацию о мероприятии
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-title">Название мероприятия *</Label>
+                  <Input
+                    id="edit-title"
+                    value={newEvent.title}
+                    onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
+                    placeholder="Например: Городской марафон"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-date">Дата *</Label>
+                    <Input
+                      id="edit-date"
+                      type="date"
+                      value={newEvent.date}
+                      onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-time">Время *</Label>
+                    <Input
+                      id="edit-time"
+                      type="time"
+                      value={newEvent.time}
+                      onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-location">Место проведения *</Label>
+                  <Input
+                    id="edit-location"
+                    value={newEvent.location}
+                    onChange={(e) => {
+                      const location = e.target.value;
+                      setNewEvent({...newEvent, location});
+                      
+                      const isIstra = location.toLowerCase().includes('истр') || 
+                                      location.toLowerCase().includes('istra');
+                      setSuggestedEventType(isIstra ? 'local' : 'away');
+                    }}
+                    placeholder="Например: Центральный парк, г. Истра"
+                  />
+                  {suggestedEventType && (
+                    <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <Icon name="Info" size={16} className="text-blue-600 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm text-blue-900">
+                          {suggestedEventType === 'local' 
+                            ? 'Определено как местное мероприятие (на территории м.о. Истра)'
+                            : 'Определено как выездное мероприятие (за пределами м.о. Истра)'}
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={newEvent.eventType === 'local' ? 'default' : 'outline'}
+                            onClick={() => setNewEvent({...newEvent, eventType: 'local'})}
+                          >
+                            <Icon name="MapPin" size={14} className="mr-1" />
+                            Местное
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={newEvent.eventType === 'away' ? 'default' : 'outline'}
+                            onClick={() => setNewEvent({...newEvent, eventType: 'away'})}
+                          >
+                            <Icon name="Plane" size={14} className="mr-1" />
+                            Выездное
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-eventLevel">Статус мероприятия *</Label>
+                  <Select 
+                    value={newEvent.eventLevel} 
+                    onValueChange={(value) => {
+                      const level = value as EventLevel;
+                      setNewEvent({...newEvent, eventLevel: level});
+                      const eventType = newEvent.eventType || suggestedEventType || 'local';
+                      const needsManualNumber = !(eventType === 'local' && (level === 'municipal' || level === 'intermunicipal'));
+                      setShowManualEventNumber(needsManualNumber);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите статус" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(eventLevelNames).map(([key, name]) => (
+                        <SelectItem key={key} value={key}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {showManualEventNumber && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-manualEventNumber">Номер мероприятия</Label>
+                    <Input
+                      id="edit-manualEventNumber"
+                      value={manualEventNumber}
+                      onChange={(e) => setManualEventNumber(e.target.value)}
+                      placeholder="Например: РФ-2025-123 или МО-456"
+                    />
+                  </div>
+                )}
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-organizer">Организатор *</Label>
+                  <Input
+                    id="edit-organizer"
+                    value={newEvent.organizer}
+                    onChange={(e) => setNewEvent({...newEvent, organizer: e.target.value})}
+                    placeholder="Например: Спортивный клуб"
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-description">Описание</Label>
+                  <Textarea
+                    id="edit-description"
+                    value={newEvent.description}
+                    onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
+                    placeholder="Подробное описание мероприятия"
+                    rows={4}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => {
+                  setIsEditDialogOpen(false);
+                  setEditingEvent(null);
+                }}>
+                  Отмена
+                </Button>
+                <Button onClick={handleSaveEdit}>
+                  <Icon name="Save" size={18} className="mr-2" />
+                  Сохранить изменения
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <Tabs defaultValue="calendar" className="animate-scale-in bg-slate-50">
@@ -1625,6 +1880,28 @@ export default function Index() {
                                   </div>
                                 </div>
                               )}
+                              {isAdmin && (
+                                <div className="pt-4 border-t flex gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    className="flex-1"
+                                    onClick={() => {
+                                      handleEditEvent(event);
+                                    }}
+                                  >
+                                    <Icon name="Edit" size={16} className="mr-2" />
+                                    Редактировать
+                                  </Button>
+                                  <Button 
+                                    variant="destructive" 
+                                    className="flex-1"
+                                    onClick={() => handleRejectEvent(event.id)}
+                                  >
+                                    <Icon name="Trash2" size={16} className="mr-2" />
+                                    Удалить
+                                  </Button>
+                                </div>
+                              )}
                             </DialogContent>
                           </Dialog>
                         </CardContent>
@@ -1754,6 +2031,28 @@ export default function Index() {
                                 </Button>
                               ))}
                             </div>
+                          </div>
+                        )}
+                        {isAdmin && (
+                          <div className="pt-4 border-t flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={() => {
+                                handleEditEvent(event);
+                              }}
+                            >
+                              <Icon name="Edit" size={16} className="mr-2" />
+                              Редактировать
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              className="flex-1"
+                              onClick={() => handleRejectEvent(event.id)}
+                            >
+                              <Icon name="Trash2" size={16} className="mr-2" />
+                              Удалить
+                            </Button>
                           </div>
                         )}
                       </DialogContent>
@@ -2074,6 +2373,28 @@ export default function Index() {
                             <p className="text-xs text-muted-foreground">
                               {isUploading ? 'Загрузка файлов...' : 'Фото и видео с мероприятия'}
                             </p>
+                          </div>
+                        )}
+                        {isAdmin && (
+                          <div className="pt-4 border-t flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={() => {
+                                handleEditEvent(event);
+                              }}
+                            >
+                              <Icon name="Edit" size={16} className="mr-2" />
+                              Редактировать
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              className="flex-1"
+                              onClick={() => handleRejectEvent(event.id)}
+                            >
+                              <Icon name="Trash2" size={16} className="mr-2" />
+                              Удалить
+                            </Button>
                           </div>
                         )}
                       </DialogContent>
