@@ -1099,32 +1099,32 @@ export default function Index() {
 
           <TabsContent value="calendar">
             <div className="max-w-4xl mx-auto">
-              <Card className="mb-6 border-2 bg-white">
-                <CardHeader>
-                  <div className="flex items-center justify-between bg-slate-800">
+              <Card className="mb-6 border-2 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg">
+                <CardHeader className="bg-blue-600 text-white rounded-t-lg">
+                  <div className="flex items-center justify-between">
                     <Button 
                       variant="outline" 
                       size="icon"
                       onClick={() => changeMonth(-1)}
-                      className="hover:bg-primary hover:text-white transition-colors"
+                      className="text-white border-white hover:bg-blue-700 transition-colors"
                     >
                       <Icon name="ChevronLeft" size={20} />
                     </Button>
-                    <CardTitle className="text-2xl capitalize">{monthName}</CardTitle>
+                    <CardTitle className="text-2xl capitalize text-white">{monthName}</CardTitle>
                     <Button 
                       variant="outline" 
                       size="icon"
                       onClick={() => changeMonth(1)}
-                      className="hover:bg-primary hover:text-white transition-colors"
+                      className="text-white border-white hover:bg-blue-700 transition-colors"
                     >
                       <Icon name="ChevronRight" size={20} />
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-7 gap-2 bg-slate-800">
+                <CardContent className="bg-white">
+                  <div className="grid grid-cols-7 gap-2">
                     {['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'].map((day) => (
-                      <div key={day} className="text-center font-bold text-sm text-muted-foreground py-2">
+                      <div key={day} className="text-center font-bold text-sm text-blue-700 py-2">
                         {day}
                       </div>
                     ))}
@@ -1137,15 +1137,15 @@ export default function Index() {
                           aspect-square p-2 rounded-lg text-center transition-all duration-200
                           ${day.date === 0 ? 'invisible' : ''}
                           ${day.isToday ? 'ring-2 ring-accent font-bold' : ''}
-                          ${day.hasEvents ? 'bg-gradient-to-br from-primary/20 to-secondary/20 font-semibold hover:from-primary/30 hover:to-secondary/30' : 'hover:bg-muted'}
-                          ${selectedDate === `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}` ? 'bg-primary text-white hover:bg-primary' : ''}
+                          ${day.hasEvents ? 'bg-gradient-to-br from-blue-100 to-blue-200 font-semibold hover:from-blue-200 hover:to-blue-300 text-blue-900' : 'hover:bg-blue-50'}
+                          ${selectedDate === `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}` ? 'bg-blue-600 text-white hover:bg-blue-600' : ''}
                         `}
                       >
                         <div className="text-sm">{day.date || ''}</div>
                         {day.hasEvents && (
                           <div className="flex gap-0.5 justify-center mt-1">
                             {day.events.slice(0, 3).map((event, i) => (
-                              <div key={i} className="w-1 h-1 rounded-full bg-primary" />
+                              <div key={i} className="w-1 h-1 rounded-full bg-blue-600" />
                             ))}
                           </div>
                         )}
