@@ -1072,7 +1072,7 @@ export default function Index() {
           </Dialog>
         </div>
 
-        <Tabs defaultValue="calendar" className="animate-scale-in bg-slate-900">
+        <Tabs defaultValue="calendar" className="animate-scale-in bg-slate-50">
           <TabsList className={`grid w-full max-w-2xl mx-auto ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'} mb-8`}>
             <TabsTrigger value="calendar" className="text-lg">
               <Icon name="CalendarDays" size={18} className="mr-2" />
