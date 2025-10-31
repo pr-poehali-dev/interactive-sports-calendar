@@ -161,8 +161,23 @@ export default function Index() {
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
-  const [registerForm, setRegisterForm] = useState({ email: '', password: '', name: '', phone: '' });
-  const [users, setUsers] = useState<Array<User & { password: string }>>([]);
+  const [registerForm, setRegisterForm] = useState({ 
+    email: '', 
+    password: '', 
+    name: '', 
+    phone: '',
+    userType: 'individual' as 'individual' | 'legal',
+    inn: '',
+    companyName: '',
+    legalAddress: ''
+  });
+  const [users, setUsers] = useState<Array<User & { 
+    password: string;
+    userType?: 'individual' | 'legal';
+    inn?: string;
+    companyName?: string;
+    legalAddress?: string;
+  }>>([]);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
     date: '',
@@ -316,6 +331,15 @@ export default function Index() {
       return;
     }
     
+    if (registerForm.userType === 'legal' && (!registerForm.inn || !registerForm.companyName || !registerForm.legalAddress)) {
+      toast({
+        title: "Ошибка",
+        description: "Для юридических лиц необходимо заполнить все дополнительные поля",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (users.find(u => u.email === registerForm.email)) {
       toast({
         title: "Ошибка",
@@ -329,14 +353,27 @@ export default function Index() {
       email: registerForm.email,
       password: registerForm.password,
       name: registerForm.name,
-      phone: registerForm.phone
+      phone: registerForm.phone,
+      userType: registerForm.userType,
+      inn: registerForm.inn,
+      companyName: registerForm.companyName,
+      legalAddress: registerForm.legalAddress
     };
     
     setUsers([...users, newUser]);
     setCurrentUser({ email: newUser.email, name: newUser.name, phone: newUser.phone });
     setIsLoggedIn(true);
     setIsRegisterDialogOpen(false);
-    setRegisterForm({ email: '', password: '', name: '', phone: '' });
+    setRegisterForm({ 
+      email: '', 
+      password: '', 
+      name: '', 
+      phone: '',
+      userType: 'individual',
+      inn: '',
+      companyName: '',
+      legalAddress: ''
+    });
     
     toast({
       title: "Регистрация успешна",
@@ -503,7 +540,7 @@ export default function Index() {
                     Регистрация
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Регистрация</DialogTitle>
                     <DialogDescription>Для организаторов мероприятий
@@ -511,44 +548,142 @@ export default function Index() {
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="register-name">Фамилия Имя Отчество *</Label>
-                      <Input
-                        id="register-name"
-                        value={registerForm.name}
-                        onChange={(e) => setRegisterForm({...registerForm, name: e.target.value})}
-                        placeholder="Иван Иванов"
-                      />
+                      <Label>Тип регистрации *</Label>
+                      <div className="flex gap-4">
+                        <Button
+                          type="button"
+                          variant={registerForm.userType === 'individual' ? 'default' : 'outline'}
+                          className="flex-1"
+                          onClick={() => setRegisterForm({...registerForm, userType: 'individual'})}
+                        >
+                          <Icon name="User" size={18} className="mr-2" />
+                          Физическое лицо
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={registerForm.userType === 'legal' ? 'default' : 'outline'}
+                          className="flex-1"
+                          onClick={() => setRegisterForm({...registerForm, userType: 'legal'})}
+                        >
+                          <Icon name="Building" size={18} className="mr-2" />
+                          Юридическое лицо
+                        </Button>
+                      </div>
                     </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="register-email">Email *</Label>
-                      <Input
-                        id="register-email"
-                        type="email"
-                        value={registerForm.email}
-                        onChange={(e) => setRegisterForm({...registerForm, email: e.target.value})}
-                        placeholder="your@email.com"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="register-phone">Телефон *</Label>
-                      <Input
-                        id="register-phone"
-                        type="tel"
-                        value={registerForm.phone}
-                        onChange={(e) => setRegisterForm({...registerForm, phone: e.target.value})}
-                        placeholder="+7 (999) 123-45-67"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="register-password">Пароль *</Label>
-                      <Input
-                        id="register-password"
-                        type="password"
-                        value={registerForm.password}
-                        onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})}
-                        placeholder="Минимум 6 символов"
-                      />
-                    </div>
+
+                    {registerForm.userType === 'individual' ? (
+                      <>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-name">Фамилия Имя Отчество *</Label>
+                          <Input
+                            id="register-name"
+                            value={registerForm.name}
+                            onChange={(e) => setRegisterForm({...registerForm, name: e.target.value})}
+                            placeholder="Иванов Иван Иванович"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-email">Email *</Label>
+                          <Input
+                            id="register-email"
+                            type="email"
+                            value={registerForm.email}
+                            onChange={(e) => setRegisterForm({...registerForm, email: e.target.value})}
+                            placeholder="your@email.com"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-phone">Телефон *</Label>
+                          <Input
+                            id="register-phone"
+                            type="tel"
+                            value={registerForm.phone}
+                            onChange={(e) => setRegisterForm({...registerForm, phone: e.target.value})}
+                            placeholder="+7 (999) 123-45-67"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-password">Пароль *</Label>
+                          <Input
+                            id="register-password"
+                            type="password"
+                            value={registerForm.password}
+                            onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})}
+                            placeholder="Минимум 6 символов"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-company">Название организации *</Label>
+                          <Input
+                            id="register-company"
+                            value={registerForm.companyName}
+                            onChange={(e) => setRegisterForm({...registerForm, companyName: e.target.value})}
+                            placeholder="ООО «Спортклуб»"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-inn">ИНН *</Label>
+                          <Input
+                            id="register-inn"
+                            value={registerForm.inn}
+                            onChange={(e) => setRegisterForm({...registerForm, inn: e.target.value})}
+                            placeholder="1234567890"
+                            maxLength={12}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-legal-address">Юридический адрес *</Label>
+                          <Input
+                            id="register-legal-address"
+                            value={registerForm.legalAddress}
+                            onChange={(e) => setRegisterForm({...registerForm, legalAddress: e.target.value})}
+                            placeholder="г. Москва, ул. Примерная, д. 1"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-name-legal">Контактное лицо (ФИО) *</Label>
+                          <Input
+                            id="register-name-legal"
+                            value={registerForm.name}
+                            onChange={(e) => setRegisterForm({...registerForm, name: e.target.value})}
+                            placeholder="Иванов Иван Иванович"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-email-legal">Email *</Label>
+                          <Input
+                            id="register-email-legal"
+                            type="email"
+                            value={registerForm.email}
+                            onChange={(e) => setRegisterForm({...registerForm, email: e.target.value})}
+                            placeholder="company@email.com"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-phone-legal">Телефон *</Label>
+                          <Input
+                            id="register-phone-legal"
+                            type="tel"
+                            value={registerForm.phone}
+                            onChange={(e) => setRegisterForm({...registerForm, phone: e.target.value})}
+                            placeholder="+7 (999) 123-45-67"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-password-legal">Пароль *</Label>
+                          <Input
+                            id="register-password-legal"
+                            type="password"
+                            value={registerForm.password}
+                            onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})}
+                            placeholder="Минимум 6 символов"
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="flex gap-2 justify-end">
                     <Button variant="outline" onClick={() => setIsRegisterDialogOpen(false)}>
