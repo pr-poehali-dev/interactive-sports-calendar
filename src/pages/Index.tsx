@@ -655,7 +655,10 @@ export default function Index() {
                             <Input
                               id="register-passport-series"
                               value={registerForm.passportSeries}
-                              onChange={(e) => setRegisterForm({...registerForm, passportSeries: e.target.value})}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '');
+                                setRegisterForm({...registerForm, passportSeries: value});
+                              }}
                               placeholder="1234"
                               maxLength={4}
                             />
@@ -665,7 +668,10 @@ export default function Index() {
                             <Input
                               id="register-passport-number"
                               value={registerForm.passportNumber}
-                              onChange={(e) => setRegisterForm({...registerForm, passportNumber: e.target.value})}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '');
+                                setRegisterForm({...registerForm, passportNumber: value});
+                              }}
                               placeholder="567890"
                               maxLength={6}
                             />
