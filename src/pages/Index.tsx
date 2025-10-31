@@ -902,9 +902,9 @@ export default function Index() {
               className="w-20 h-20 object-contain"
             />
             <img 
-              src="https://cdn.poehali.dev/projects/7867f842-bbad-4ff0-83bb-b1a44cc1c5c5/files/6feb89f6-6f11-4140-b3cb-691fc24c54f2.jpg" 
-              alt="Герб Московской области"
-              className="w-20 h-20 object-contain"
+              src="https://cdn.poehali.dev/files/5171b1ba-a553-4f60-9a44-3c3364d0c883.jpg" 
+              alt="Мособлспорт"
+              className="w-32 h-20 object-contain"
             />
           </div>
           <div className="flex items-center justify-center gap-3 mb-4">
