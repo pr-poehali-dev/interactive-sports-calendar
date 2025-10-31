@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 
@@ -174,7 +175,8 @@ export default function Index() {
     passportSeries: '',
     passportNumber: '',
     passportIssueDate: '',
-    passportIssuedBy: ''
+    passportIssuedBy: '',
+    agreeToTerms: false
   });
   const [users, setUsers] = useState<Array<User & { 
     password: string;
@@ -359,6 +361,15 @@ export default function Index() {
       return;
     }
     
+    if (!registerForm.agreeToTerms) {
+      toast({
+        title: "Ошибка",
+        description: "Необходимо дать согласие на обработку персональных данных",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (users.find(u => u.email === registerForm.email)) {
       toast({
         title: "Ошибка",
@@ -401,7 +412,8 @@ export default function Index() {
       passportSeries: '',
       passportNumber: '',
       passportIssueDate: '',
-      passportIssuedBy: ''
+      passportIssuedBy: '',
+      agreeToTerms: false
     });
     
     toast({
@@ -768,6 +780,20 @@ export default function Index() {
                         </div>
                       </>
                     )}
+                    
+                    <div className="flex items-start gap-2 pt-2">
+                      <Checkbox 
+                        id="agree-terms"
+                        checked={registerForm.agreeToTerms}
+                        onCheckedChange={(checked) => setRegisterForm({...registerForm, agreeToTerms: checked as boolean})}
+                      />
+                      <Label 
+                        htmlFor="agree-terms" 
+                        className="text-sm font-normal leading-tight cursor-pointer"
+                      >
+                        Я согласен(на) на обработку персональных данных и принимаю условия пользовательского соглашения *
+                      </Label>
+                    </div>
                   </div>
                   <div className="flex gap-2 justify-end">
                     <Button variant="outline" onClick={() => setIsRegisterDialogOpen(false)}>
