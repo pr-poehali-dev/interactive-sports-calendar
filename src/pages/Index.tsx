@@ -1745,6 +1745,118 @@ export default function Index() {
             </Card>
           </div>
         )}
+        
+        {isAdmin && pastEvents.length > 0 && (
+          <div className="mb-8 grid gap-6 md:grid-cols-2 animate-fade-in">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="TrendingUp" size={20} className="text-primary" />
+                  Топ-5 видов спорта
+                </CardTitle>
+                <CardDescription>По количеству прошедших мероприятий</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {(() => {
+                    const sportStats = pastEvents.reduce((acc, event) => {
+                      const sport = event.sport;
+                      acc[sport] = (acc[sport] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>);
+                    
+                    const topSports = Object.entries(sportStats)
+                      .sort(([, a], [, b]) => b - a)
+                      .slice(0, 5);
+                    
+                    const maxCount = topSports[0]?.[1] || 1;
+                    
+                    return topSports.map(([sport, count], index) => (
+                      <div key={sport} className="space-y-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-primary">#{index + 1}</span>
+                            <Icon name={sportIcons[sport as SportType]} size={16} className="text-primary" />
+                            <span className="font-medium">{sportNames[sport as SportType]}</span>
+                          </div>
+                          <span className="font-bold text-primary">{count}</span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
+                            style={{ width: `${(count / maxCount) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Users" size={20} className="text-primary" />
+                  Статистика участников
+                </CardTitle>
+                <CardDescription>Данные по прошедшим мероприятиям</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {(() => {
+                    const totalParticipants = pastEvents.reduce((sum, event) => sum + (event.participants || 0), 0);
+                    const eventsWithParticipants = pastEvents.filter(e => e.participants && e.participants > 0);
+                    const avgParticipants = eventsWithParticipants.length > 0 
+                      ? Math.round(totalParticipants / eventsWithParticipants.length) 
+                      : 0;
+                    const maxParticipants = Math.max(...pastEvents.map(e => e.participants || 0), 0);
+                    const maxEvent = pastEvents.find(e => e.participants === maxParticipants);
+                    
+                    return (
+                      <>
+                        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-500 rounded-lg">
+                              <Icon name="Users" size={24} className="text-white" />
+                            </div>
+                            <div>
+                              <div className="text-sm text-gray-600">Всего участников</div>
+                              <div className="text-2xl font-bold text-blue-700">{totalParticipants}</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-green-500 rounded-lg">
+                              <Icon name="TrendingUp" size={24} className="text-white" />
+                            </div>
+                            <div>
+                              <div className="text-sm text-gray-600">Среднее на мероприятие</div>
+                              <div className="text-2xl font-bold text-green-700">{avgParticipants}</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {maxEvent && maxParticipants > 0 && (
+                          <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Icon name="Trophy" size={18} className="text-purple-600" />
+                              <span className="text-sm font-medium text-purple-900">Самое массовое</span>
+                            </div>
+                            <div className="text-sm text-gray-700 mb-1">{maxEvent.title}</div>
+                            <div className="text-2xl font-bold text-purple-700">{maxParticipants} участников</div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         <Tabs defaultValue="calendar" className="animate-scale-in bg-slate-50">
           <TabsList className={`grid w-full max-w-2xl mx-auto ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'} mb-8`}>
