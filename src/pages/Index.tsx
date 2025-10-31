@@ -169,7 +169,12 @@ export default function Index() {
     userType: 'individual' as 'individual' | 'legal',
     inn: '',
     companyName: '',
-    legalAddress: ''
+    legalAddress: '',
+    birthDate: '',
+    passportSeries: '',
+    passportNumber: '',
+    passportIssueDate: '',
+    passportIssuedBy: ''
   });
   const [users, setUsers] = useState<Array<User & { 
     password: string;
@@ -177,6 +182,11 @@ export default function Index() {
     inn?: string;
     companyName?: string;
     legalAddress?: string;
+    birthDate?: string;
+    passportSeries?: string;
+    passportNumber?: string;
+    passportIssueDate?: string;
+    passportIssuedBy?: string;
   }>>([]);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
@@ -331,6 +341,15 @@ export default function Index() {
       return;
     }
     
+    if (registerForm.userType === 'individual' && (!registerForm.birthDate || !registerForm.passportSeries || !registerForm.passportNumber || !registerForm.passportIssueDate || !registerForm.passportIssuedBy)) {
+      toast({
+        title: "Ошибка",
+        description: "Для физических лиц необходимо заполнить все паспортные данные",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (registerForm.userType === 'legal' && (!registerForm.inn || !registerForm.companyName || !registerForm.legalAddress)) {
       toast({
         title: "Ошибка",
@@ -357,7 +376,12 @@ export default function Index() {
       userType: registerForm.userType,
       inn: registerForm.inn,
       companyName: registerForm.companyName,
-      legalAddress: registerForm.legalAddress
+      legalAddress: registerForm.legalAddress,
+      birthDate: registerForm.birthDate,
+      passportSeries: registerForm.passportSeries,
+      passportNumber: registerForm.passportNumber,
+      passportIssueDate: registerForm.passportIssueDate,
+      passportIssuedBy: registerForm.passportIssuedBy
     };
     
     setUsers([...users, newUser]);
@@ -372,7 +396,12 @@ export default function Index() {
       userType: 'individual',
       inn: '',
       companyName: '',
-      legalAddress: ''
+      legalAddress: '',
+      birthDate: '',
+      passportSeries: '',
+      passportNumber: '',
+      passportIssueDate: '',
+      passportIssuedBy: ''
     });
     
     toast({
@@ -609,6 +638,56 @@ export default function Index() {
                             value={registerForm.password}
                             onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})}
                             placeholder="Минимум 6 символов"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-birthdate">Дата рождения *</Label>
+                          <Input
+                            id="register-birthdate"
+                            type="date"
+                            value={registerForm.birthDate}
+                            onChange={(e) => setRegisterForm({...registerForm, birthDate: e.target.value})}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="register-passport-series">Серия паспорта *</Label>
+                            <Input
+                              id="register-passport-series"
+                              value={registerForm.passportSeries}
+                              onChange={(e) => setRegisterForm({...registerForm, passportSeries: e.target.value})}
+                              placeholder="1234"
+                              maxLength={4}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="register-passport-number">Номер паспорта *</Label>
+                            <Input
+                              id="register-passport-number"
+                              value={registerForm.passportNumber}
+                              onChange={(e) => setRegisterForm({...registerForm, passportNumber: e.target.value})}
+                              placeholder="567890"
+                              maxLength={6}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-passport-date">Дата выдачи паспорта *</Label>
+                          <Input
+                            id="register-passport-date"
+                            type="date"
+                            value={registerForm.passportIssueDate}
+                            onChange={(e) => setRegisterForm({...registerForm, passportIssueDate: e.target.value})}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="register-passport-issued">Кем выдан паспорт *</Label>
+                          <Textarea
+                            id="register-passport-issued"
+                            value={registerForm.passportIssuedBy}
+                            onChange={(e) => setRegisterForm({...registerForm, passportIssuedBy: e.target.value})}
+                            placeholder="Отделением УФМС России..."
+                            rows={2}
                           />
                         </div>
                       </>
