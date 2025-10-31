@@ -1242,16 +1242,6 @@ export default function Index() {
                                     <strong>Место:</strong> {event.location}
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <Icon name="Users" size={18} className="text-accent" />
-                                    <strong>Участники:</strong> {event.participants} из {event.maxParticipants}
-                                  </div>
-                                  {event.maxSpectators && (
-                                    <div className="flex items-center gap-2">
-                                      <Icon name="Eye" size={18} className="text-accent" />
-                                      <strong>Макс. зрителей:</strong> {event.maxSpectators}
-                                    </div>
-                                  )}
-                                  <div className="flex items-center gap-2">
                                     <Icon name="Building" size={18} className="text-muted-foreground" />
                                     <strong>Организатор:</strong> {event.organizer}
                                   </div>
@@ -1317,30 +1307,6 @@ export default function Index() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="mb-4 space-y-3">
-                      <div>
-                        <div className="flex justify-between text-sm mb-2">
-                          <span className="text-muted-foreground">Участников</span>
-                          <span className="font-semibold">{event.participants}/{event.maxParticipants}</span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-2">
-                          <div 
-                            className="bg-gradient-to-r from-primary to-secondary h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${(event.participants / event.maxParticipants) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                      {event.maxSpectators && (
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground flex items-center gap-1">
-                            <Icon name="Eye" size={14} />
-                            Макс. зрителей
-                          </span>
-                          <span className="font-semibold">{event.maxSpectators}</span>
-                        </div>
-                      )}
-                    </div>
-                    
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button 
@@ -1366,16 +1332,7 @@ export default function Index() {
                               <Icon name="MapPin" size={18} className="text-secondary" />
                               <strong>Место:</strong> {event.location}
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Icon name="Users" size={18} className="text-accent" />
-                              <strong>Участники:</strong> {event.participants} из {event.maxParticipants}
-                            </div>
-                            {event.maxSpectators && (
-                              <div className="flex items-center gap-2">
-                                <Icon name="Eye" size={18} className="text-accent" />
-                                <strong>Макс. зрителей:</strong> {event.maxSpectators}
-                              </div>
-                            )}
+
                             <div className="flex items-center gap-2">
                               <Icon name="Building" size={18} className="text-muted-foreground" />
                               <strong>Организатор:</strong> {event.organizer}
