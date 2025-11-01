@@ -350,6 +350,9 @@ export default function Index() {
   const [adminEmail, setAdminEmail] = useState(() => {
     return localStorage.getItem('adminEmail') || 'admin@istraevents.ru';
   });
+  const [storedAdminPassword, setStoredAdminPassword] = useState(() => {
+    return localStorage.getItem('adminPassword') || 'admin123';
+  });
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
@@ -458,6 +461,10 @@ export default function Index() {
   useEffect(() => {
     localStorage.setItem('adminEmail', adminEmail);
   }, [adminEmail]);
+
+  useEffect(() => {
+    localStorage.setItem('adminPassword', storedAdminPassword);
+  }, [storedAdminPassword]);
 
   const handleRegister = (eventId: number) => {
     const event = events.find(e => e.id === eventId);
@@ -909,7 +916,7 @@ export default function Index() {
   };
   
   const handleAdminLogin = () => {
-    if (adminPassword === 'admin123') {
+    if (adminPassword === storedAdminPassword) {
       setIsAdmin(true);
       setIsAdminDialogOpen(false);
       setAdminPassword('');
@@ -1759,6 +1766,20 @@ export default function Index() {
                         На этот адрес будут приходить уведомления о новых регистрациях и заявках на мероприятия
                       </p>
                     </div>
+                    
+                    <div className="grid gap-2">
+                      <Label htmlFor="admin-password">Пароль администратора</Label>
+                      <Input
+                        id="admin-password"
+                        type="password"
+                        value={storedAdminPassword}
+                        onChange={(e) => setStoredAdminPassword(e.target.value)}
+                        placeholder="Введите новый пароль"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Пароль для входа в панель администратора
+                      </p>
+                    </div>
                   </div>
                   <div className="flex gap-2 justify-end">
                     <Button variant="outline" onClick={() => setIsSettingsDialogOpen(false)}>
@@ -1768,7 +1789,7 @@ export default function Index() {
                       setIsSettingsDialogOpen(false);
                       toast({
                         title: "Настройки сохранены",
-                        description: `Email администратора: ${adminEmail}`
+                        description: "Настройки администратора обновлены"
                       });
                     }}>
                       <Icon name="Save" size={18} className="mr-2" />
