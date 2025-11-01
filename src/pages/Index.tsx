@@ -425,6 +425,24 @@ export default function Index() {
 
   const upcomingEvents = filteredEvents.filter(e => e.status === 'upcoming');
   const pastEvents = filteredEvents.filter(e => e.status === 'past');
+  
+  const upcomingDocStats = useMemo(() => {
+    const stats = { red: 0, yellow: 0, blue: 0, green: 0 };
+    upcomingEvents.forEach(event => {
+      const status = getDocumentStatus(event);
+      stats[status]++;
+    });
+    return stats;
+  }, [upcomingEvents]);
+  
+  const pastDocStats = useMemo(() => {
+    const stats = { red: 0, yellow: 0, blue: 0, green: 0 };
+    pastEvents.forEach(event => {
+      const status = getDocumentStatus(event);
+      stats[status]++;
+    });
+    return stats;
+  }, [pastEvents]);
 
   const handleRegister = (eventId: number) => {
     const event = events.find(e => e.id === eventId);
@@ -2748,6 +2766,7 @@ export default function Index() {
                     >
                       <Icon name="List" size={14} />
                       Все мероприятия
+                      <Badge variant="secondary" className="ml-1">{upcomingEvents.length}</Badge>
                     </Button>
                     <Button
                       variant={selectedDocStatus === 'red' ? 'destructive' : 'outline'}
@@ -2757,6 +2776,7 @@ export default function Index() {
                     >
                       <div className="w-3 h-3 rounded-full bg-red-500" />
                       Критические
+                      <Badge variant="secondary" className="ml-1">{upcomingDocStats.red}</Badge>
                     </Button>
                     <Button
                       variant={selectedDocStatus === 'yellow' ? 'default' : 'outline'}
@@ -2766,6 +2786,7 @@ export default function Index() {
                     >
                       <div className="w-3 h-3 rounded-full bg-yellow-500" />
                       Без протоколов
+                      <Badge variant="secondary" className="ml-1">{upcomingDocStats.yellow}</Badge>
                     </Button>
                     <Button
                       variant={selectedDocStatus === 'blue' ? 'default' : 'outline'}
@@ -2775,6 +2796,7 @@ export default function Index() {
                     >
                       <div className="w-3 h-3 rounded-full bg-blue-500" />
                       Без медиа
+                      <Badge variant="secondary" className="ml-1">{upcomingDocStats.blue}</Badge>
                     </Button>
                     <Button
                       variant={selectedDocStatus === 'green' ? 'default' : 'outline'}
@@ -2784,6 +2806,7 @@ export default function Index() {
                     >
                       <div className="w-3 h-3 rounded-full bg-green-500" />
                       Полный комплект
+                      <Badge variant="secondary" className="ml-1">{upcomingDocStats.green}</Badge>
                     </Button>
                   </div>
                 </div>
@@ -3015,6 +3038,7 @@ export default function Index() {
                     >
                       <Icon name="List" size={14} />
                       Все мероприятия
+                      <Badge variant="secondary" className="ml-1">{pastEvents.length}</Badge>
                     </Button>
                     <Button
                       variant={selectedDocStatus === 'red' ? 'destructive' : 'outline'}
@@ -3024,6 +3048,7 @@ export default function Index() {
                     >
                       <div className="w-3 h-3 rounded-full bg-red-500" />
                       Критические
+                      <Badge variant="secondary" className="ml-1">{pastDocStats.red}</Badge>
                     </Button>
                     <Button
                       variant={selectedDocStatus === 'yellow' ? 'default' : 'outline'}
@@ -3033,6 +3058,7 @@ export default function Index() {
                     >
                       <div className="w-3 h-3 rounded-full bg-yellow-500" />
                       Без протоколов
+                      <Badge variant="secondary" className="ml-1">{pastDocStats.yellow}</Badge>
                     </Button>
                     <Button
                       variant={selectedDocStatus === 'blue' ? 'default' : 'outline'}
@@ -3042,6 +3068,7 @@ export default function Index() {
                     >
                       <div className="w-3 h-3 rounded-full bg-blue-500" />
                       Без медиа
+                      <Badge variant="secondary" className="ml-1">{pastDocStats.blue}</Badge>
                     </Button>
                     <Button
                       variant={selectedDocStatus === 'green' ? 'default' : 'outline'}
@@ -3051,6 +3078,7 @@ export default function Index() {
                     >
                       <div className="w-3 h-3 rounded-full bg-green-500" />
                       Полный комплект
+                      <Badge variant="secondary" className="ml-1">{pastDocStats.green}</Badge>
                     </Button>
                   </div>
                 </div>
