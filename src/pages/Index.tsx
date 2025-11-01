@@ -35,6 +35,7 @@ interface Event {
   result?: string;
   approved: boolean;
   submittedAt: string;
+  submittedBy?: string;
   documents?: { name: string; url: string }[];
   media?: { type: 'image' | 'video'; url: string; name: string }[];
 }
@@ -377,7 +378,8 @@ export default function Index() {
       participants: 0,
       status: 'upcoming',
       approved: isAdmin,
-      submittedAt: new Date().toISOString()
+      submittedAt: new Date().toISOString(),
+      submittedBy: currentUser?.email
     };
     
     setEvents([...events, eventToAdd]);
@@ -415,13 +417,96 @@ export default function Index() {
     setShowManualEventNumber(false);
   };
   
-  const handleApproveEvent = (eventId: number) => {
+  const handleApproveEvent = async (eventId: number) => {
     const event = events.find(e => e.id === eventId);
+    if (!event) return;
+    
     setEvents(events.map(e => 
       e.id === eventId ? { ...e, approved: true } : e
     ));
     
-    if (event) {
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #2563eb 0%, #dc2626 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+            .event-card { background: white; border-left: 4px solid #2563eb; padding: 20px; margin: 20px 0; border-radius: 5px; }
+            .event-info { margin: 10px 0; }
+            .event-info strong { color: #2563eb; }
+            .button { display: inline-block; background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>✅ Ваше мероприятие одобрено!</h1>
+            </div>
+            <div class="content">
+              <p>Добрый день!</p>
+              <p>Ваше мероприятие успешно прошло модерацию и добавлено в <strong>Единый календарный план м.о. Истра</strong>.</p>
+              
+              <div class="event-card">
+                <h2 style="margin-top: 0; color: #2563eb;">${event.title}</h2>
+                ${event.eventNumber ? `<div class="event-info"><strong>Номер:</strong> ${event.eventNumber}</div>` : ''}
+                <div class="event-info"><strong>Дата:</strong> ${new Date(event.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })} в ${event.time}</div>
+                <div class="event-info"><strong>Место:</strong> ${event.location}</div>
+                <div class="event-info"><strong>Организатор:</strong> ${event.organizer}</div>
+                ${event.eventLevel ? `<div class="event-info"><strong>Статус:</strong> ${eventLevelNames[event.eventLevel]}</div>` : ''}
+              </div>
+              
+              <p>Теперь участники могут регистрироваться на ваше мероприятие через сайт.</p>
+              
+              <p style="text-align: center;">
+                <a href="${window.location.origin}" class="button">Посмотреть на сайте</a>
+              </p>
+              
+              <p>С уважением,<br>Управление физической культуры и спорта м.о. Истра</p>
+            </div>
+            <div class="footer">
+              <p>г. Истра, ул. Ленина, д. 81 | +7 (495) 994-85-55 (доб. 429)</p>
+              <p>info@sportvokrugistra.ru</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    if (event.submittedBy) {
+      try {
+        const response = await fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: event.submittedBy,
+            subject: `✅ Мероприятие "${event.title}" одобрено - Единый календарный план`,
+            html: emailHtml
+          })
+        });
+        
+        if (response.ok) {
+          toast({
+            title: "Мероприятие одобрено",
+            description: `"${event.title}" добавлено в календарь. Email отправлен организатору.`
+          });
+        } else {
+          toast({
+            title: "Мероприятие одобрено",
+            description: `"${event.title}" добавлено в календарь. Email не отправлен.`
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Мероприятие одобрено",
+          description: `"${event.title}" добавлено в календарь. Email не отправлен.`
+        });
+      }
+    } else {
       toast({
         title: "Мероприятие одобрено",
         description: `"${event.title}" добавлено в календарь`
@@ -429,17 +514,94 @@ export default function Index() {
     }
   };
   
-  const handleRejectEvent = (eventId: number) => {
+  const handleRejectEvent = async (eventId: number) => {
     const event = events.find(e => e.id === eventId);
+    if (!event) return;
+    
     setEvents(events.filter(e => e.id !== eventId));
     
-    if (event) {
-      toast({
-        title: "Мероприятие отклонено",
-        description: `"${event.title}" было удалено из заявок`,
-        variant: "destructive"
-      });
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+            .event-card { background: white; border-left: 4px solid #dc2626; padding: 20px; margin: 20px 0; border-radius: 5px; }
+            .event-info { margin: 10px 0; }
+            .button { display: inline-block; background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>❌ Заявка на мероприятие отклонена</h1>
+            </div>
+            <div class="content">
+              <p>Добрый день!</p>
+              <p>К сожалению, ваша заявка на проведение мероприятия не прошла модерацию.</p>
+              
+              <div class="event-card">
+                <h2 style="margin-top: 0; color: #dc2626;">${event.title}</h2>
+                <div class="event-info"><strong>Дата:</strong> ${new Date(event.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })} в ${event.time}</div>
+                <div class="event-info"><strong>Место:</strong> ${event.location}</div>
+                <div class="event-info"><strong>Организатор:</strong> ${event.organizer}</div>
+              </div>
+              
+              <p><strong>Возможные причины отклонения:</strong></p>
+              <ul>
+                <li>Неполная или некорректная информация о мероприятии</li>
+                <li>Несоответствие календарному плану</li>
+                <li>Конфликт по датам с другими событиями</li>
+                <li>Недостаточная подготовка документации</li>
+              </ul>
+              
+              <p>Вы можете уточнить детали и подать заявку повторно с учётом замечаний.</p>
+              
+              <p style="text-align: center;">
+                <a href="${window.location.origin}" class="button">Подать заявку повторно</a>
+              </p>
+              
+              <p>Для получения консультации свяжитесь с нами:</p>
+              <p>📞 +7 (495) 994-85-55 (доб. 429)<br>
+              📧 info@sportvokrugistra.ru</p>
+              
+              <p>С уважением,<br>Управление физической культуры и спорта м.о. Истра</p>
+            </div>
+            <div class="footer">
+              <p>г. Истра, ул. Ленина, д. 81 | +7 (495) 994-85-55 (доб. 429)</p>
+              <p>info@sportvokrugistra.ru</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    if (event.submittedBy) {
+      try {
+        await fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: event.submittedBy,
+            subject: `❌ Заявка на мероприятие "${event.title}" отклонена`,
+            html: emailHtml
+          })
+        });
+      } catch (error) {
+        // Игнорируем ошибки отправки
+      }
     }
+    
+    toast({
+      title: "Мероприятие отклонено",
+      description: `"${event.title}" было удалено из заявок`,
+      variant: "destructive"
+    });
   };
   
   const handleEditEvent = (event: Event) => {
@@ -773,11 +935,80 @@ export default function Index() {
     }
   };
   
-  const handleRejectUser = (email: string) => {
+  const handleRejectUser = async (email: string) => {
+    const user = users.find(u => u.email === email);
+    if (!user) return;
+    
     setUsers(users.filter(u => u.email !== email));
+    
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>❌ Регистрация отклонена</h1>
+            </div>
+            <div class="content">
+              <p>Здравствуйте, ${user.name}!</p>
+              <p>К сожалению, ваша заявка на регистрацию в системе <strong>Единый календарный план м.о. Истра</strong> не прошла модерацию.</p>
+              
+              <p><strong>Возможные причины отклонения:</strong></p>
+              <ul>
+                <li>Неполные или некорректные персональные данные</li>
+                <li>Несоответствие требованиям платформы</li>
+                <li>Дублирование существующей учетной записи</li>
+              </ul>
+              
+              <p>Вы можете подать заявку повторно с корректными данными.</p>
+              
+              <p style="text-align: center;">
+                <a href="${window.location.origin}" class="button">Зарегистрироваться повторно</a>
+              </p>
+              
+              <p>Для получения дополнительной информации свяжитесь с нами:</p>
+              <p>📞 +7 (495) 994-85-55 (доб. 429)<br>
+              📧 info@sportvokrugistra.ru</p>
+              
+              <p>С уважением,<br>Управление физической культуры и спорта м.о. Истра</p>
+            </div>
+            <div class="footer">
+              <p>г. Истра, ул. Ленина, д. 81 | +7 (495) 994-85-55 (доб. 429)</p>
+              <p>info@sportvokrugistra.ru</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    try {
+      await fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          subject: '❌ Регистрация отклонена - Единый календарный план м.о. Истра',
+          html: emailHtml
+        })
+      });
+    } catch (error) {
+      // Игнорируем ошибки отправки
+    }
+    
     toast({
       title: "Регистрация отклонена",
-      description: "Пользователь удалён из системы"
+      description: "Пользователь удалён из системы. Email-уведомление отправлено."
     });
   };
   
