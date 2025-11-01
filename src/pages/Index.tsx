@@ -695,12 +695,82 @@ export default function Index() {
     });
   };
   
-  const handleApproveUser = (email: string) => {
+  const handleApproveUser = async (email: string) => {
+    const user = users.find(u => u.email === email);
+    if (!user) return;
+    
     setUsers(users.map(u => u.email === email ? {...u, approved: true} : u));
-    toast({
-      title: "Пользователь одобрен",
-      description: "Пользователь может войти в систему"
-    });
+    
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #2563eb 0%, #dc2626 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎉 Регистрация одобрена!</h1>
+            </div>
+            <div class="content">
+              <p>Здравствуйте, ${user.name}!</p>
+              <p>Ваша регистрация на платформе <strong>Единый календарный план м.о. Истра</strong> успешно одобрена администратором.</p>
+              <p>Теперь вы можете:</p>
+              <ul>
+                <li>Просматривать все спортивные мероприятия</li>
+                <li>Регистрироваться на события</li>
+                <li>Предлагать свои мероприятия</li>
+              </ul>
+              <p style="text-align: center;">
+                <a href="${window.location.origin}" class="button">Войти на сайт</a>
+              </p>
+              <p>С уважением,<br>Управление физической культуры и спорта м.о. Истра</p>
+            </div>
+            <div class="footer">
+              <p>г. Истра, ул. Ленина, д. 81 | +7 (495) 994-85-55 (доб. 429)</p>
+              <p>info@sportvokrugistra.ru</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    try {
+      const response = await fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          subject: '✅ Ваша регистрация одобрена - Единый календарный план м.о. Истра',
+          html: emailHtml
+        })
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Пользователь одобрен",
+          description: `Email-уведомление отправлено на ${email}`
+        });
+      } else {
+        toast({
+          title: "Пользователь одобрен",
+          description: "Email не отправлен - проверьте настройки SMTP"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Пользователь одобрен",
+        description: "Email не отправлен - ошибка подключения"
+      });
+    }
   };
   
   const handleRejectUser = (email: string) => {
