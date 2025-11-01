@@ -347,6 +347,10 @@ export default function Index() {
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [adminEmail, setAdminEmail] = useState(() => {
+    return localStorage.getItem('adminEmail') || 'admin@istraevents.ru';
+  });
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -451,6 +455,10 @@ export default function Index() {
     localStorage.setItem('eventCalendarUsers', JSON.stringify(users));
   }, [users]);
 
+  useEffect(() => {
+    localStorage.setItem('adminEmail', adminEmail);
+  }, [adminEmail]);
+
   const handleRegister = (eventId: number) => {
     const event = events.find(e => e.id === eventId);
     setRegisteredEvents([...registeredEvents, eventId]);
@@ -531,6 +539,72 @@ export default function Index() {
         description: `"${eventToAdd.title}" успешно добавлено в календарь`
       });
     } else {
+      const eventEmailHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+              .info-block { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #667eea; }
+              .info-row { margin: 8px 0; }
+              .label { font-weight: bold; color: #667eea; }
+              .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>📅 Новая заявка на мероприятие</h1>
+              </div>
+              <div class="content">
+                <p>Поступила новая заявка на добавление мероприятия в календарный план.</p>
+                
+                <div class="info-block">
+                  <h3 style="margin-top: 0; color: #667eea;">${eventToAdd.title}</h3>
+                  ${eventToAdd.eventNumber ? `<div class="info-row"><span class="label">Номер:</span> ${eventToAdd.eventNumber}</div>` : ''}
+                  <div class="info-row"><span class="label">Дата:</span> ${new Date(eventToAdd.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })} в ${eventToAdd.time}</div>
+                  <div class="info-row"><span class="label">Место проведения:</span> ${eventToAdd.location}</div>
+                  <div class="info-row"><span class="label">Организатор:</span> ${eventToAdd.organizer}</div>
+                  <div class="info-row"><span class="label">Статус:</span> ${eventLevelNames[eventToAdd.eventLevel]}</div>
+                  <div class="info-row"><span class="label">Вид спорта:</span> ${sportNames[eventToAdd.sport]}</div>
+                  <div class="info-row"><span class="label">Макс. участников:</span> ${eventToAdd.maxParticipants}</div>
+                  ${eventToAdd.maxSpectators ? `<div class="info-row"><span class="label">Макс. зрителей:</span> ${eventToAdd.maxSpectators}</div>` : ''}
+                  ${currentUser ? `<div class="info-row"><span class="label">Подал заявку:</span> ${currentUser.name} (${currentUser.email})</div>` : ''}
+                </div>
+                
+                ${eventToAdd.description ? `
+                  <div class="info-block">
+                    <h3 style="margin-top: 0; color: #667eea;">Описание</h3>
+                    <p>${eventToAdd.description}</p>
+                  </div>
+                ` : ''}
+                
+                <p style="margin-top: 30px;">Пожалуйста, проверьте заявку и одобрите или отклоните её в панели администратора.</p>
+              </div>
+              <div class="footer">
+                <p>Это автоматическое уведомление из системы "Единый календарный план м.о. Истра"</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+      
+      fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: adminEmail,
+          subject: '📅 Новая заявка на мероприятие - Единый календарный план',
+          html: eventEmailHtml
+        })
+      }).catch(() => {
+        console.log('Email notification failed (non-critical)');
+      });
+      
       toast({
         title: "Отправлено на модерацию",
         description: `"${eventToAdd.title}" будет добавлено после проверки администратором`
@@ -990,7 +1064,7 @@ export default function Index() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        to: 'admin@istraevents.ru',
+        to: adminEmail,
         subject: '🔔 Новая регистрация пользователя - Единый календарный план',
         html: adminEmailHtml
       })
@@ -1657,10 +1731,57 @@ export default function Index() {
               </DialogContent>
             </Dialog>
           ) : (
-            <Button variant="outline" onClick={handleAdminLogout} className="gap-2">
-              <Icon name="LogOut" size={18} />
-              Выйти из режима администратора
-            </Button>
+            <>
+              <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" title="Настройки">
+                    <Icon name="Settings" size={18} />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Настройки администратора</DialogTitle>
+                    <DialogDescription>
+                      Управление параметрами системы
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="admin-email">Email администратора</Label>
+                      <Input
+                        id="admin-email"
+                        type="email"
+                        value={adminEmail}
+                        onChange={(e) => setAdminEmail(e.target.value)}
+                        placeholder="admin@example.com"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        На этот адрес будут приходить уведомления о новых регистрациях и заявках на мероприятия
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" onClick={() => setIsSettingsDialogOpen(false)}>
+                      Отмена
+                    </Button>
+                    <Button onClick={() => {
+                      setIsSettingsDialogOpen(false);
+                      toast({
+                        title: "Настройки сохранены",
+                        description: `Email администратора: ${adminEmail}`
+                      });
+                    }}>
+                      <Icon name="Save" size={18} className="mr-2" />
+                      Сохранить
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Button variant="outline" onClick={handleAdminLogout} className="gap-2">
+                <Icon name="LogOut" size={18} />
+                Выйти из режима администратора
+              </Button>
+            </>
           )}
         </div>
         
