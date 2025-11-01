@@ -1501,13 +1501,12 @@ export default function Index() {
             </SelectContent>
           </Select>
           
+          <Button className="gap-2" onClick={handleOpenAddDialog}>
+            <Icon name="Plus" size={18} />
+            {isAdmin ? 'Добавить мероприятие' : 'Предложить мероприятие'}
+          </Button>
+          
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2" onClick={handleOpenAddDialog}>
-                <Icon name="Plus" size={18} />
-                {isAdmin ? 'Добавить мероприятие' : 'Предложить мероприятие'}
-              </Button>
-            </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Новое спортивное мероприятие</DialogTitle>
