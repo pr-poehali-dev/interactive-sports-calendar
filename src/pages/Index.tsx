@@ -16,6 +16,14 @@ type SportType = 'all' | 'football' | 'basketball' | 'running' | 'volleyball' | 
 
 type EventLevel = 'municipal' | 'intermunicipal' | 'regional' | 'interregional' | 'cfo' | 'national' | 'european' | 'world';
 
+interface RequiredDocument {
+  type: 'approval_letter' | 'police_notification' | 'security_plan' | 'regulations' | 'protocols';
+  name: string;
+  uploaded: boolean;
+  url?: string;
+  fileName?: string;
+}
+
 interface Event {
   id: number;
   eventNumber?: string;
@@ -38,6 +46,7 @@ interface Event {
   submittedBy?: string;
   documents?: { name: string; url: string }[];
   media?: { type: 'image' | 'video'; url: string; name: string }[];
+  requiredDocuments?: RequiredDocument[];
 }
 
 const eventLevelNames: Record<EventLevel, string> = {
@@ -50,6 +59,22 @@ const eventLevelNames: Record<EventLevel, string> = {
   european: 'Европейское',
   world: 'Мировое'
 };
+
+const requiredDocumentNames: Record<RequiredDocument['type'], string> = {
+  approval_letter: 'Письмо о согласовании',
+  police_notification: 'Уведомление ОМВД',
+  security_plan: 'План ОБ',
+  regulations: 'Положение',
+  protocols: 'Протоколы'
+};
+
+const createDefaultRequiredDocuments = (): RequiredDocument[] => [
+  { type: 'approval_letter', name: 'Письмо о согласовании', uploaded: false },
+  { type: 'police_notification', name: 'Уведомление ОМВД', uploaded: false },
+  { type: 'security_plan', name: 'План ОБ', uploaded: false },
+  { type: 'regulations', name: 'Положение', uploaded: false },
+  { type: 'protocols', name: 'Протоколы', uploaded: false }
+];
 
 const initialEvents: Event[] = [
   {
@@ -425,8 +450,10 @@ export default function Index() {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
     
+    const requiredDocs = createDefaultRequiredDocuments();
+    
     setEvents(events.map(e => 
-      e.id === eventId ? { ...e, approved: true } : e
+      e.id === eventId ? { ...e, approved: true, requiredDocuments: requiredDocs } : e
     ));
     
     const emailHtml = `
@@ -2378,11 +2405,61 @@ export default function Index() {
                                   </div>
                                 </DialogDescription>
                               </DialogHeader>
+                              
+                              {event.requiredDocuments && event.requiredDocuments.length > 0 && (
+                                <div className="pt-4 border-t">
+                                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                                    <Icon name="ClipboardCheck" size={18} className="text-primary" />
+                                    Обязательные документы
+                                  </h3>
+                                  <div className="space-y-2">
+                                    {event.requiredDocuments.map((doc, i) => (
+                                      <div 
+                                        key={i} 
+                                        className={`p-3 rounded-md border-2 flex items-center justify-between ${
+                                          doc.uploaded 
+                                            ? 'bg-green-50 border-green-300' 
+                                            : 'bg-amber-50 border-amber-300'
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-3 flex-1">
+                                          {doc.uploaded ? (
+                                            <Icon name="CheckCircle2" size={20} className="text-green-600 flex-shrink-0" />
+                                          ) : (
+                                            <Icon name="AlertCircle" size={20} className="text-amber-600 flex-shrink-0" />
+                                          )}
+                                          <div className="flex-1">
+                                            <p className="font-medium text-sm">{doc.name}</p>
+                                            {doc.uploaded && doc.fileName && (
+                                              <p className="text-xs text-muted-foreground">{doc.fileName}</p>
+                                            )}
+                                          </div>
+                                        </div>
+                                        {doc.uploaded && doc.url ? (
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm"
+                                            onClick={() => window.open(doc.url, '_blank')}
+                                          >
+                                            <Icon name="Download" size={14} className="mr-1" />
+                                            Скачать
+                                          </Button>
+                                        ) : (
+                                          <Badge variant="outline" className="border-amber-600 text-amber-600 text-xs">
+                                            Требуется
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
                               {event.documents && event.documents.length > 0 && (
                                 <div className="pt-4 border-t">
                                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                                     <Icon name="FileText" size={18} className="text-primary" />
-                                    Документы о мероприятии
+                                    Дополнительные документы
                                   </h3>
                                   <div className="space-y-2">
                                     {event.documents.map((doc, i) => (
@@ -2399,26 +2476,44 @@ export default function Index() {
                                   </div>
                                 </div>
                               )}
-                              {isAdmin && (
-                                <div className="pt-4 border-t flex gap-2">
-                                  <Button 
-                                    variant="outline" 
-                                    className="flex-1"
-                                    onClick={() => {
-                                      handleEditEvent(event);
-                                    }}
-                                  >
-                                    <Icon name="Edit" size={16} className="mr-2" />
-                                    Редактировать
-                                  </Button>
-                                  <Button 
-                                    variant="destructive" 
-                                    className="flex-1"
-                                    onClick={() => handleRejectEvent(event.id)}
-                                  >
-                                    <Icon name="Trash2" size={16} className="mr-2" />
-                                    Удалить
-                                  </Button>
+                              
+                              {(isAdmin || (isLoggedIn && currentUser && event.submittedBy === currentUser.email)) && (
+                                <div className="pt-4 border-t space-y-2">
+                                  {isLoggedIn && currentUser && event.submittedBy === currentUser.email && (
+                                    <Button 
+                                      variant="default" 
+                                      className="w-full bg-blue-600 hover:bg-blue-700"
+                                      onClick={() => {
+                                        setManageFilesEvent(event);
+                                        setIsManageFilesDialogOpen(true);
+                                      }}
+                                    >
+                                      <Icon name="Upload" size={16} className="mr-2" />
+                                      Управление файлами
+                                    </Button>
+                                  )}
+                                  {isAdmin && (
+                                    <div className="flex gap-2">
+                                      <Button 
+                                        variant="outline" 
+                                        className="flex-1"
+                                        onClick={() => {
+                                          handleEditEvent(event);
+                                        }}
+                                      >
+                                        <Icon name="Edit" size={16} className="mr-2" />
+                                        Редактировать
+                                      </Button>
+                                      <Button 
+                                        variant="destructive" 
+                                        className="flex-1"
+                                        onClick={() => handleRejectEvent(event.id)}
+                                      >
+                                        <Icon name="Trash2" size={16} className="mr-2" />
+                                        Удалить
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </DialogContent>
@@ -3360,11 +3455,149 @@ export default function Index() {
 
           {manageFilesEvent && (
             <div className="space-y-6">
+              {/* Required Documents Section */}
+              {manageFilesEvent.requiredDocuments && manageFilesEvent.requiredDocuments.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Icon name="ClipboardCheck" size={18} className="text-primary" />
+                    Обязательные документы
+                  </h3>
+                  <div className="space-y-3">
+                    {manageFilesEvent.requiredDocuments.map((doc, i) => (
+                      <div 
+                        key={i} 
+                        className={`p-4 rounded-md border-2 ${
+                          doc.uploaded 
+                            ? 'bg-green-50 border-green-300' 
+                            : 'bg-amber-50 border-amber-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {doc.uploaded ? (
+                              <Icon name="CheckCircle2" size={20} className="text-green-600" />
+                            ) : (
+                              <Icon name="AlertCircle" size={20} className="text-amber-600" />
+                            )}
+                            <span className="font-medium">{doc.name}</span>
+                          </div>
+                          {doc.uploaded ? (
+                            <Badge className="bg-green-600">Загружен</Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-amber-600 text-amber-600">Требуется</Badge>
+                          )}
+                        </div>
+                        
+                        {doc.uploaded && doc.fileName && (
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-green-200">
+                            <p className="text-sm text-muted-foreground flex items-center gap-2">
+                              <Icon name="FileText" size={14} />
+                              {doc.fileName}
+                            </p>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => doc.url && window.open(doc.url, '_blank')}
+                              >
+                                <Icon name="Download" size={14} className="mr-1" />
+                                Скачать
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => {
+                                  const updatedRequiredDocs = manageFilesEvent.requiredDocuments?.map((d, idx) => 
+                                    idx === i ? { ...d, uploaded: false, url: undefined, fileName: undefined } : d
+                                  );
+                                  setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, requiredDocuments: updatedRequiredDocs} : ev));
+                                  setManageFilesEvent({...manageFilesEvent, requiredDocuments: updatedRequiredDocs});
+                                  toast({
+                                    title: "Документ удален",
+                                    description: `${doc.name} был удален`
+                                  });
+                                }}
+                              >
+                                <Icon name="Trash2" size={14} className="text-red-600" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {!doc.uploaded && (
+                          <div className="mt-3">
+                            <Input
+                              type="file"
+                              accept=".pdf,.doc,.docx,.xls,.xlsx"
+                              disabled={isUploadingDoc}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                
+                                setIsUploadingDoc(true);
+                                
+                                try {
+                                  const reader = new FileReader();
+                                  const fileContent = await new Promise<string>((resolve) => {
+                                    reader.onload = () => {
+                                      const base64 = (reader.result as string).split(',')[1];
+                                      resolve(base64);
+                                    };
+                                    reader.readAsDataURL(file);
+                                  });
+                                  
+                                  const response = await fetch('https://functions.poehali.dev/d33abef9-76df-4869-9223-096e3c85c33f', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      fileName: file.name,
+                                      fileContent: fileContent,
+                                      fileType: 'document'
+                                    })
+                                  });
+                                  
+                                  const result = await response.json();
+                                  
+                                  const updatedRequiredDocs = manageFilesEvent.requiredDocuments?.map((d, idx) => 
+                                    idx === i ? { ...d, uploaded: true, url: result.url, fileName: file.name } : d
+                                  );
+                                  
+                                  setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, requiredDocuments: updatedRequiredDocs} : ev));
+                                  setManageFilesEvent({...manageFilesEvent, requiredDocuments: updatedRequiredDocs});
+                                  
+                                  toast({
+                                    title: "Документ загружен",
+                                    description: `${doc.name} успешно загружен`
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: "Ошибка загрузки",
+                                    description: "Не удалось загрузить файл",
+                                    variant: "destructive"
+                                  });
+                                } finally {
+                                  setIsUploadingDoc(false);
+                                  e.target.value = '';
+                                }
+                              }}
+                              className="cursor-pointer text-sm"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {isUploadingDoc ? 'Загрузка...' : 'PDF, Word, Excel файлы'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               {/* Existing Documents Section */}
-              <div>
+              <div className="pt-4 border-t">
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
                   <Icon name="FileText" size={18} className="text-primary" />
-                  Загруженные документы ({manageFilesEvent.documents?.length || 0})
+                  Дополнительные документы ({manageFilesEvent.documents?.length || 0})
                 </h3>
                 {manageFilesEvent.documents && manageFilesEvent.documents.length > 0 ? (
                   <div className="space-y-2">
