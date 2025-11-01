@@ -243,6 +243,10 @@ export default function Index() {
   const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
   const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const [isManageFilesDialogOpen, setIsManageFilesDialogOpen] = useState(false);
+  const [manageFilesEvent, setManageFilesEvent] = useState<Event | null>(null);
+  const [uploadFileType, setUploadFileType] = useState<'document' | 'media'>('document');
+  const [uploadMediaType, setUploadMediaType] = useState<'image' | 'video'>('image');
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ 
     email: '', 
@@ -2548,26 +2552,43 @@ export default function Index() {
                             </div>
                           </div>
                         )}
-                        {isAdmin && (
-                          <div className="pt-4 border-t flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              className="flex-1"
-                              onClick={() => {
-                                handleEditEvent(event);
-                              }}
-                            >
-                              <Icon name="Edit" size={16} className="mr-2" />
-                              Редактировать
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              className="flex-1"
-                              onClick={() => handleRejectEvent(event.id)}
-                            >
-                              <Icon name="Trash2" size={16} className="mr-2" />
-                              Удалить
-                            </Button>
+                        {(isAdmin || (isLoggedIn && currentUser && event.submittedBy === currentUser.email)) && (
+                          <div className="pt-4 border-t space-y-2">
+                            {isLoggedIn && currentUser && event.submittedBy === currentUser.email && (
+                              <Button 
+                                variant="default" 
+                                className="w-full bg-blue-600 hover:bg-blue-700"
+                                onClick={() => {
+                                  setManageFilesEvent(event);
+                                  setIsManageFilesDialogOpen(true);
+                                }}
+                              >
+                                <Icon name="Upload" size={16} className="mr-2" />
+                                Управление файлами
+                              </Button>
+                            )}
+                            {isAdmin && (
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  className="flex-1"
+                                  onClick={() => {
+                                    handleEditEvent(event);
+                                  }}
+                                >
+                                  <Icon name="Edit" size={16} className="mr-2" />
+                                  Редактировать
+                                </Button>
+                                <Button 
+                                  variant="destructive" 
+                                  className="flex-1"
+                                  onClick={() => handleRejectEvent(event.id)}
+                                >
+                                  <Icon name="Trash2" size={16} className="mr-2" />
+                                  Удалить
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </DialogContent>
@@ -2758,17 +2779,32 @@ export default function Index() {
                           </div>
                         )}
                         
-                        {isAdmin && (
-                          <div className="pt-4 border-t">
-                            <h3 className="font-semibold mb-3 flex items-center gap-2">
-                              <Icon name="FilePlus" size={18} className="text-primary" />
-                              Загрузить документы
-                            </h3>
-                            <Input
-                              type="file"
-                              multiple
-                              accept=".pdf,.doc,.docx,.xls,.xlsx"
-                              disabled={isUploadingDoc}
+                        {(isAdmin || (isLoggedIn && currentUser && event.submittedBy === currentUser.email)) && (
+                          <div className="pt-4 border-t space-y-2">
+                            {isLoggedIn && currentUser && event.submittedBy === currentUser.email && (
+                              <Button 
+                                variant="default" 
+                                className="w-full bg-blue-600 hover:bg-blue-700"
+                                onClick={() => {
+                                  setManageFilesEvent(event);
+                                  setIsManageFilesDialogOpen(true);
+                                }}
+                              >
+                                <Icon name="Upload" size={16} className="mr-2" />
+                                Управление файлами
+                              </Button>
+                            )}
+                            {isAdmin && (
+                              <>
+                                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                                  <Icon name="FilePlus" size={18} className="text-primary" />
+                                  Загрузить документы (Админ)
+                                </h3>
+                                <Input
+                                  type="file"
+                                  multiple
+                                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                                  disabled={isUploadingDoc}
                               onChange={async (e) => {
                                 const files = Array.from(e.target.files || []);
                                 if (files.length === 0) return;
@@ -2816,11 +2852,13 @@ export default function Index() {
                                   setIsUploadingDoc(false);
                                 }
                               }}
-                              className="cursor-pointer mb-2"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              {isUploadingDoc ? 'Загрузка документов...' : 'PDF, Word, Excel файлы'}
-                            </p>
+                                  className="cursor-pointer mb-2"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                  {isUploadingDoc ? 'Загрузка документов...' : 'PDF, Word, Excel файлы'}
+                                </p>
+                              </>
+                            )}
                           </div>
                         )}
                         
@@ -2828,7 +2866,7 @@ export default function Index() {
                           <div className="pt-4 border-t">
                             <h3 className="font-semibold mb-3 flex items-center gap-2">
                               <Icon name="ImagePlus" size={18} className="text-primary" />
-                              Загрузить медиа
+                              Загрузить медиа (Админ)
                             </h3>
                             <Input
                               type="file"
@@ -3306,6 +3344,266 @@ export default function Index() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Manage Files Dialog */}
+      <Dialog open={isManageFilesDialogOpen} onOpenChange={setIsManageFilesDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              <Icon name="FolderOpen" size={24} className="text-primary" />
+              Управление файлами мероприятия
+            </DialogTitle>
+            <DialogDescription>
+              {manageFilesEvent?.title}
+            </DialogDescription>
+          </DialogHeader>
+
+          {manageFilesEvent && (
+            <div className="space-y-6">
+              {/* Existing Documents Section */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Icon name="FileText" size={18} className="text-primary" />
+                  Загруженные документы ({manageFilesEvent.documents?.length || 0})
+                </h3>
+                {manageFilesEvent.documents && manageFilesEvent.documents.length > 0 ? (
+                  <div className="space-y-2">
+                    {manageFilesEvent.documents.map((doc, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 border rounded-md bg-muted/30">
+                        <div className="flex items-center gap-2 flex-1">
+                          <Icon name="FileText" size={16} className="text-blue-600" />
+                          <span className="text-sm truncate">{doc.name}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => window.open(doc.url, '_blank')}
+                          >
+                            <Icon name="Download" size={14} className="mr-1" />
+                            Скачать
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              const updatedDocs = manageFilesEvent.documents?.filter((_, index) => index !== i);
+                              setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, documents: updatedDocs} : ev));
+                              setManageFilesEvent({...manageFilesEvent, documents: updatedDocs});
+                              toast({
+                                title: "Документ удален",
+                                description: `${doc.name} был удален`
+                              });
+                            }}
+                          >
+                            <Icon name="Trash2" size={14} className="text-red-600" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-4 text-center border rounded-md">
+                    Нет загруженных документов
+                  </p>
+                )}
+              </div>
+
+              {/* Upload Documents Section */}
+              <div className="pt-4 border-t">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Icon name="FilePlus" size={18} className="text-primary" />
+                  Загрузить документы
+                </h3>
+                <Input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  disabled={isUploadingDoc}
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length === 0) return;
+                    
+                    setIsUploadingDoc(true);
+                    const uploadedDocs: { name: string; url: string }[] = manageFilesEvent.documents || [];
+                    
+                    try {
+                      for (const file of files) {
+                        const reader = new FileReader();
+                        const fileContent = await new Promise<string>((resolve) => {
+                          reader.onload = () => {
+                            const base64 = (reader.result as string).split(',')[1];
+                            resolve(base64);
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                        
+                        const response = await fetch('https://functions.poehali.dev/d33abef9-76df-4869-9223-096e3c85c33f', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            fileName: file.name,
+                            fileContent: fileContent,
+                            fileType: 'document'
+                          })
+                        });
+                        
+                        const result = await response.json();
+                        uploadedDocs.push({ name: file.name, url: result.url });
+                      }
+                      
+                      setEvents(events.map(e => e.id === manageFilesEvent.id ? {...e, documents: uploadedDocs} : e));
+                      setManageFilesEvent({...manageFilesEvent, documents: uploadedDocs});
+                      toast({
+                        title: "Документы загружены",
+                        description: `Загружено ${files.length} файл(ов)`
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Ошибка загрузки",
+                        description: "Не удалось загрузить файлы",
+                        variant: "destructive"
+                      });
+                    } finally {
+                      setIsUploadingDoc(false);
+                      e.target.value = '';
+                    }
+                  }}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  {isUploadingDoc ? 'Загрузка документов...' : 'PDF, Word, Excel файлы (можно выбрать несколько)'}
+                </p>
+              </div>
+
+              {/* Existing Media Section */}
+              <div className="pt-4 border-t">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Icon name="Images" size={18} className="text-primary" />
+                  Загруженные фото и видео ({manageFilesEvent.media?.length || 0})
+                </h3>
+                {manageFilesEvent.media && manageFilesEvent.media.length > 0 ? (
+                  <div className="grid grid-cols-4 gap-3">
+                    {manageFilesEvent.media.map((item, i) => (
+                      <div 
+                        key={i} 
+                        className="relative group"
+                      >
+                        <div className="aspect-square bg-muted rounded-md flex items-center justify-center border">
+                          {item.type === 'image' ? (
+                            <Icon name="Image" size={32} className="text-muted-foreground" />
+                          ) : (
+                            <Icon name="Video" size={32} className="text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="absolute top-1 right-1 flex gap-1">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => window.open(item.url, '_blank')}
+                          >
+                            <Icon name="Eye" size={14} />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => {
+                              const updatedMedia = manageFilesEvent.media?.filter((_, index) => index !== i);
+                              setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, media: updatedMedia} : ev));
+                              setManageFilesEvent({...manageFilesEvent, media: updatedMedia});
+                              toast({
+                                title: "Медиафайл удален",
+                                description: `${item.name} был удален`
+                              });
+                            }}
+                          >
+                            <Icon name="Trash2" size={14} />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 truncate">{item.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-4 text-center border rounded-md">
+                    Нет загруженных медиафайлов
+                  </p>
+                )}
+              </div>
+
+              {/* Upload Media Section */}
+              <div className="pt-4 border-t">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Icon name="ImagePlus" size={18} className="text-primary" />
+                  Загрузить фото и видео
+                </h3>
+                <Input
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  disabled={isUploading}
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length === 0) return;
+                    
+                    setIsUploading(true);
+                    const uploadedMedia: { type: 'image' | 'video'; url: string; name: string }[] = manageFilesEvent.media || [];
+                    
+                    try {
+                      for (const file of files) {
+                        const fileType = file.type.startsWith('image/') ? 'image' : 'video';
+                        const reader = new FileReader();
+                        const fileContent = await new Promise<string>((resolve) => {
+                          reader.onload = () => {
+                            const base64 = (reader.result as string).split(',')[1];
+                            resolve(base64);
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                        
+                        const response = await fetch('https://functions.poehali.dev/d33abef9-76df-4869-9223-096e3c85c33f', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            fileName: file.name,
+                            fileContent: fileContent,
+                            fileType: fileType
+                          })
+                        });
+                        
+                        const result = await response.json();
+                        uploadedMedia.push({ type: fileType, url: result.url, name: file.name });
+                      }
+                      
+                      setEvents(events.map(e => e.id === manageFilesEvent.id ? {...e, media: uploadedMedia} : e));
+                      setManageFilesEvent({...manageFilesEvent, media: uploadedMedia});
+                      toast({
+                        title: "Медиа загружены",
+                        description: `Загружено ${files.length} файл(ов)`
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Ошибка загрузки",
+                        description: "Не удалось загрузить файлы",
+                        variant: "destructive"
+                      });
+                    } finally {
+                      setIsUploading(false);
+                      e.target.value = '';
+                    }
+                  }}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  {isUploading ? 'Загрузка медиафайлов...' : 'Фото и видео файлы (можно выбрать несколько)'}
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
