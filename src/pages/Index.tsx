@@ -76,6 +76,37 @@ const createDefaultRequiredDocuments = (): RequiredDocument[] => [
   { type: 'protocols', name: 'Протоколы', uploaded: false }
 ];
 
+// Функция определения статуса документов
+const getDocumentStatus = (event: Event): 'red' | 'yellow' | 'blue' | 'green' => {
+  if (!event.requiredDocuments) return 'red';
+  
+  const approvalLetter = event.requiredDocuments.find(d => d.type === 'approval_letter')?.uploaded || false;
+  const policeNotification = event.requiredDocuments.find(d => d.type === 'police_notification')?.uploaded || false;
+  const securityPlan = event.requiredDocuments.find(d => d.type === 'security_plan')?.uploaded || false;
+  const regulations = event.requiredDocuments.find(d => d.type === 'regulations')?.uploaded || false;
+  const protocols = event.requiredDocuments.find(d => d.type === 'protocols')?.uploaded || false;
+  
+  const hasMedia = event.media && event.media.length > 0;
+  
+  // Красный: не загружены основные 4 документа
+  if (!approvalLetter || !policeNotification || !securityPlan || !regulations) {
+    return 'red';
+  }
+  
+  // Желтый: загружены основные 4, но нет протоколов
+  if (!protocols) {
+    return 'yellow';
+  }
+  
+  // Синий: все обязательные документы есть, но нет медиа
+  if (!hasMedia) {
+    return 'blue';
+  }
+  
+  // Зеленый: все есть
+  return 'green';
+};
+
 const initialEvents: Event[] = [
   {
     id: 1,
@@ -98,6 +129,16 @@ const initialEvents: Event[] = [
       { name: 'Положение о первенстве по самбо.pdf', url: '#' },
       { name: 'Регламент соревнований.pdf', url: '#' },
       { name: 'Заявка на участие.docx', url: '#' }
+    ],
+    requiredDocuments: [
+      { type: 'approval_letter', name: 'Письмо о согласовании', uploaded: true, url: '#', fileName: 'approval.pdf' },
+      { type: 'police_notification', name: 'Уведомление ОМВД', uploaded: true, url: '#', fileName: 'police.pdf' },
+      { type: 'security_plan', name: 'План ОБ', uploaded: true, url: '#', fileName: 'security.pdf' },
+      { type: 'regulations', name: 'Положение', uploaded: true, url: '#', fileName: 'regulations.pdf' },
+      { type: 'protocols', name: 'Протоколы', uploaded: true, url: '#', fileName: 'protocols.pdf' }
+    ],
+    media: [
+      { type: 'image', url: '#', name: 'photo1.jpg' }
     ]
   },
   {
@@ -105,31 +146,74 @@ const initialEvents: Event[] = [
     eventNumber: 'МО-2025-002',
     eventType: 'local',
     eventLevel: 'municipal',
-    title: 'Истринский забег',
-    date: '2025-10-10',
-    time: '09:00',
-    location: 'Центральный парк г. Истра',
-    sport: 'running',
+    title: 'Турнир по баскетболу среди школ (красный индикатор)',
+    date: '2025-11-18',
+    time: '14:00',
+    location: 'Спортивная школа №3',
+    sport: 'basketball',
     participants: 0,
-    maxParticipants: 100,
-    status: 'past',
-    description: 'Традиционный городской забег на 5 км и 10 км.',
-    organizer: 'Администрация г.о. Истра',
-    result: 'Мероприятие успешно завершено. Приняло участие 87 человек.',
+    maxParticipants: 80,
+    status: 'upcoming',
+    description: 'Школьный турнир по баскетболу для учеников 8-11 классов.',
+    organizer: 'Спортивная школа №3',
     approved: true,
     submittedAt: new Date().toISOString(),
-    documents: [
-      { name: 'Положение о забеге.pdf', url: 'https://storage.poehali.dev/files/demo-race-regulations.pdf' },
-      { name: 'Протокол результатов.pdf', url: 'https://storage.poehali.dev/files/demo-race-results.pdf' },
-      { name: 'Список победителей и призёров.xlsx', url: 'https://storage.poehali.dev/files/demo-race-winners.xlsx' }
-    ],
-    media: [
-      { type: 'image', url: 'https://storage.poehali.dev/files/demo-race-1.jpg', name: 'Старт забега' },
-      { type: 'image', url: 'https://storage.poehali.dev/files/demo-race-2.jpg', name: 'Участники на дистанции' },
-      { type: 'image', url: 'https://storage.poehali.dev/files/demo-race-3.jpg', name: 'Награждение победителей' },
-      { type: 'video', url: 'https://storage.poehali.dev/files/demo-race-video.mp4', name: 'Видеообзор мероприятия' },
-      { type: 'image', url: 'https://storage.poehali.dev/files/demo-race-4.jpg', name: 'Массовый старт' },
-      { type: 'image', url: 'https://storage.poehali.dev/files/demo-race-5.jpg', name: 'Финишная прямая' }
+    requiredDocuments: [
+      { type: 'approval_letter', name: 'Письмо о согласовании', uploaded: false },
+      { type: 'police_notification', name: 'Уведомление ОМВД', uploaded: false },
+      { type: 'security_plan', name: 'План ОБ', uploaded: false },
+      { type: 'regulations', name: 'Положение', uploaded: false },
+      { type: 'protocols', name: 'Протоколы', uploaded: false }
+    ]
+  },
+  {
+    id: 3,
+    eventNumber: 'МО-2025-003',
+    eventType: 'local',
+    eventLevel: 'municipal',
+    title: 'Соревнования по плаванию (желтый индикатор)',
+    date: '2025-11-20',
+    time: '11:00',
+    location: 'Бассейн "Олимп"',
+    sport: 'swimming',
+    participants: 0,
+    maxParticipants: 40,
+    status: 'upcoming',
+    description: 'Открытые соревнования по плаванию среди юниоров.',
+    organizer: 'Плавательный клуб "Дельфин"',
+    approved: true,
+    submittedAt: new Date().toISOString(),
+    requiredDocuments: [
+      { type: 'approval_letter', name: 'Письмо о согласовании', uploaded: true, url: '#', fileName: 'approval.pdf' },
+      { type: 'police_notification', name: 'Уведомление ОМВД', uploaded: true, url: '#', fileName: 'police.pdf' },
+      { type: 'security_plan', name: 'План ОБ', uploaded: true, url: '#', fileName: 'security.pdf' },
+      { type: 'regulations', name: 'Положение', uploaded: true, url: '#', fileName: 'regulations.pdf' },
+      { type: 'protocols', name: 'Протоколы', uploaded: false }
+    ]
+  },
+  {
+    id: 4,
+    eventNumber: 'МО-2025-004',
+    eventType: 'local',
+    eventLevel: 'municipal',
+    title: 'Чемпионат по теннису (синий индикатор)',
+    date: '2025-11-22',
+    time: '10:00',
+    location: 'Теннисный центр',
+    sport: 'tennis',
+    participants: 0,
+    maxParticipants: 32,
+    status: 'upcoming',
+    description: 'Областной турнир по теннису.',
+    organizer: 'Теннисный клуб "Ас"',
+    approved: true,
+    submittedAt: new Date().toISOString(),
+    requiredDocuments: [
+      { type: 'approval_letter', name: 'Письмо о согласовании', uploaded: true, url: '#', fileName: 'approval.pdf' },
+      { type: 'police_notification', name: 'Уведомление ОМВД', uploaded: true, url: '#', fileName: 'police.pdf' },
+      { type: 'security_plan', name: 'План ОБ', uploaded: true, url: '#', fileName: 'security.pdf' },
+      { type: 'regulations', name: 'Положение', uploaded: true, url: '#', fileName: 'regulations.pdf' },
+      { type: 'protocols', name: 'Протоколы', uploaded: true, url: '#', fileName: 'protocols.pdf' }
     ]
   }
 ];
@@ -2323,6 +2407,48 @@ export default function Index() {
                 </CardContent>
               </Card>
 
+              {/* Легенда индикаторов документов */}
+              <Card className="mb-6 bg-gradient-to-br from-slate-50 to-slate-100">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Icon name="Info" size={20} className="text-blue-600" />
+                    Статус документов мероприятий
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-red-500">
+                      <div className="w-4 h-4 rounded-full bg-red-500 flex-shrink-0" />
+                      <div className="text-sm">
+                        <div className="font-semibold text-red-900">Критическая нехватка</div>
+                        <div className="text-gray-600">Не загружены основные документы</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-yellow-500">
+                      <div className="w-4 h-4 rounded-full bg-yellow-500 flex-shrink-0" />
+                      <div className="text-sm">
+                        <div className="font-semibold text-yellow-900">Требуются протоколы</div>
+                        <div className="text-gray-600">Основные документы загружены</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-blue-500">
+                      <div className="w-4 h-4 rounded-full bg-blue-500 flex-shrink-0" />
+                      <div className="text-sm">
+                        <div className="font-semibold text-blue-900">Требуются медиафайлы</div>
+                        <div className="text-gray-600">Все документы загружены</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-green-500">
+                      <div className="w-4 h-4 rounded-full bg-green-500 flex-shrink-0" />
+                      <div className="text-sm">
+                        <div className="font-semibold text-green-900">Полный комплект</div>
+                        <div className="text-gray-600">Все документы и медиа загружены</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {selectedDate && (
                 <div className="animate-fade-in">
                   <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
@@ -2330,8 +2456,27 @@ export default function Index() {
                     События на {new Date(selectedDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
                   </h3>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {upcomingEvents.filter(e => e.date === selectedDate).map((event) => (
-                      <Card key={event.id} className="hover:shadow-lg transition-all border-2 hover:border-primary">
+                    {upcomingEvents.filter(e => e.date === selectedDate).map((event) => {
+                      const docStatus = event.approved ? getDocumentStatus(event) : null;
+                      const statusColors = {
+                        red: 'bg-red-500',
+                        yellow: 'bg-yellow-500',
+                        blue: 'bg-blue-500',
+                        green: 'bg-green-500'
+                      };
+                      const statusText = {
+                        red: 'Основные документы не загружены',
+                        yellow: 'Требуются протоколы',
+                        blue: 'Требуются медиафайлы',
+                        green: 'Все документы загружены'
+                      };
+                      
+                      return (
+                      <Card key={event.id} className="hover:shadow-lg transition-all border-2 hover:border-primary relative">
+                        {docStatus && (
+                          <div className={`absolute top-2 right-2 w-3 h-3 rounded-full ${statusColors[docStatus]}`} 
+                               title={statusText[docStatus]} />
+                        )}
                         <CardHeader>
                           <div className="flex items-start justify-between mb-2">
                             <Badge className="bg-gradient-to-r from-primary to-secondary text-white">
@@ -2520,7 +2665,8 @@ export default function Index() {
                           </Dialog>
                         </CardContent>
                       </Card>
-                    ))}
+                      );
+                    })}
                   </div>
                   {upcomingEvents.filter(e => e.date === selectedDate).length === 0 && (
                     <Card className="text-center py-8">
@@ -2545,13 +2691,74 @@ export default function Index() {
           </TabsContent>
 
           <TabsContent value="upcoming">
+            {/* Легенда индикаторов */}
+            <Card className="mb-6 max-w-4xl mx-auto bg-gradient-to-br from-slate-50 to-slate-100">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Icon name="Info" size={20} className="text-blue-600" />
+                  Статус документов
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-red-500">
+                    <div className="w-4 h-4 rounded-full bg-red-500 flex-shrink-0" />
+                    <div className="text-sm">
+                      <div className="font-semibold text-red-900">Критическая нехватка</div>
+                      <div className="text-gray-600">Не загружены основные документы</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-yellow-500">
+                    <div className="w-4 h-4 rounded-full bg-yellow-500 flex-shrink-0" />
+                    <div className="text-sm">
+                      <div className="font-semibold text-yellow-900">Требуются протоколы</div>
+                      <div className="text-gray-600">Основные документы загружены</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-blue-500">
+                    <div className="w-4 h-4 rounded-full bg-blue-500 flex-shrink-0" />
+                    <div className="text-sm">
+                      <div className="font-semibold text-blue-900">Требуются медиафайлы</div>
+                      <div className="text-gray-600">Все документы загружены</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-green-500">
+                    <div className="w-4 h-4 rounded-full bg-green-500 flex-shrink-0" />
+                    <div className="text-sm">
+                      <div className="font-semibold text-green-900">Полный комплект</div>
+                      <div className="text-gray-600">Все документы и медиа загружены</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {upcomingEvents.map((event, index) => (
+              {upcomingEvents.map((event, index) => {
+                const docStatus = event.approved ? getDocumentStatus(event) : null;
+                const statusColors = {
+                  red: 'bg-red-500',
+                  yellow: 'bg-yellow-500',
+                  blue: 'bg-blue-500',
+                  green: 'bg-green-500'
+                };
+                const statusText = {
+                  red: 'Основные документы не загружены',
+                  yellow: 'Требуются протоколы',
+                  blue: 'Требуются медиафайлы',
+                  green: 'Все документы загружены'
+                };
+                
+                return (
                 <Card 
                   key={event.id} 
-                  className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary animate-fade-in"
+                  className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary animate-fade-in relative"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
+                  {docStatus && (
+                    <div className={`absolute top-3 right-3 w-3 h-3 rounded-full ${statusColors[docStatus]} z-10`} 
+                         title={statusText[docStatus]} />
+                  )}
                   <CardHeader>
                     <div className="flex items-start justify-between mb-2">
                       <Badge variant="default" className="bg-gradient-to-r from-primary to-secondary text-white">
@@ -2690,18 +2897,80 @@ export default function Index() {
                     </Dialog>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           </TabsContent>
 
           <TabsContent value="past">
+            {/* Легенда индикаторов */}
+            <Card className="mb-6 max-w-4xl mx-auto bg-gradient-to-br from-slate-50 to-slate-100">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Icon name="Info" size={20} className="text-blue-600" />
+                  Статус документов
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-red-500">
+                    <div className="w-4 h-4 rounded-full bg-red-500 flex-shrink-0" />
+                    <div className="text-sm">
+                      <div className="font-semibold text-red-900">Критическая нехватка</div>
+                      <div className="text-gray-600">Не загружены основные документы</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-yellow-500">
+                    <div className="w-4 h-4 rounded-full bg-yellow-500 flex-shrink-0" />
+                    <div className="text-sm">
+                      <div className="font-semibold text-yellow-900">Требуются протоколы</div>
+                      <div className="text-gray-600">Основные документы загружены</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-blue-500">
+                    <div className="w-4 h-4 rounded-full bg-blue-500 flex-shrink-0" />
+                    <div className="text-sm">
+                      <div className="font-semibold text-blue-900">Требуются медиафайлы</div>
+                      <div className="text-gray-600">Все документы загружены</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-green-500">
+                    <div className="w-4 h-4 rounded-full bg-green-500 flex-shrink-0" />
+                    <div className="text-sm">
+                      <div className="font-semibold text-green-900">Полный комплект</div>
+                      <div className="text-gray-600">Все документы и медиа загружены</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {pastEvents.map((event, index) => (
+              {pastEvents.map((event, index) => {
+                const docStatus = event.approved ? getDocumentStatus(event) : null;
+                const statusColors = {
+                  red: 'bg-red-500',
+                  yellow: 'bg-yellow-500',
+                  blue: 'bg-blue-500',
+                  green: 'bg-green-500'
+                };
+                const statusText = {
+                  red: 'Основные документы не загружены',
+                  yellow: 'Требуются протоколы',
+                  blue: 'Требуются медиафайлы',
+                  green: 'Все документы загружены'
+                };
+                
+                return (
                 <Card 
                   key={event.id} 
-                  className="hover:shadow-lg transition-all duration-300 border animate-fade-in opacity-90"
+                  className="hover:shadow-lg transition-all duration-300 border animate-fade-in opacity-90 relative"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
+                  {docStatus && (
+                    <div className={`absolute top-3 right-3 w-3 h-3 rounded-full ${statusColors[docStatus]} z-10`} 
+                         title={statusText[docStatus]} />
+                  )}
                   <CardHeader>
                     <div className="flex items-start justify-between mb-2">
                       <Badge variant="secondary">
@@ -3049,7 +3318,8 @@ export default function Index() {
                     </Dialog>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           </TabsContent>
 
