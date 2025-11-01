@@ -3071,6 +3071,38 @@ export default function Index() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-3 mb-4">
+                          {(() => {
+                            const userEventsCount = events.filter(e => e.submittedBy === user.email).length;
+                            const approvedEventsCount = events.filter(e => e.submittedBy === user.email && e.approved).length;
+                            const pendingEventsCount = events.filter(e => e.submittedBy === user.email && !e.approved).length;
+                            
+                            if (userEventsCount > 0) {
+                              return (
+                                <div className="p-3 bg-purple-50 border border-purple-200 rounded-md mb-3">
+                                  <div className="flex items-center gap-2 text-sm font-semibold text-purple-900 mb-2">
+                                    <Icon name="BarChart3" size={16} className="text-purple-600" />
+                                    Статистика мероприятий
+                                  </div>
+                                  <div className="space-y-1 ml-6">
+                                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                      <Icon name="Calendar" size={12} />
+                                      Всего предложено: <span className="font-semibold text-purple-900">{userEventsCount}</span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                      <Icon name="CheckCircle" size={12} />
+                                      Одобрено: <span className="font-semibold text-green-600">{approvedEventsCount}</span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                      <Icon name="Clock" size={12} />
+                                      На модерации: <span className="font-semibold text-orange-600">{pendingEventsCount}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                          
                           {user.userType === 'individual' ? (
                             <>
                               <div className="text-sm">
