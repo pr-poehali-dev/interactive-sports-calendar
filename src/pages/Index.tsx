@@ -218,6 +218,8 @@ interface User {
   email: string;
   name: string;
   phone: string;
+  approved?: boolean;
+  submittedAt?: string;
 }
 
 export default function Index() {
@@ -268,6 +270,8 @@ export default function Index() {
     passportNumber?: string;
     passportIssueDate?: string;
     passportIssuedBy?: string;
+    approved?: boolean;
+    submittedAt?: string;
   }>>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [customSport, setCustomSport] = useState('');
@@ -611,12 +615,12 @@ export default function Index() {
       passportSeries: registerForm.passportSeries,
       passportNumber: registerForm.passportNumber,
       passportIssueDate: registerForm.passportIssueDate,
-      passportIssuedBy: registerForm.passportIssuedBy
+      passportIssuedBy: registerForm.passportIssuedBy,
+      approved: false,
+      submittedAt: new Date().toISOString()
     };
     
     setUsers([...users, newUser]);
-    setCurrentUser({ email: newUser.email, name: newUser.name, phone: newUser.phone });
-    setIsLoggedIn(true);
     setIsRegisterDialogOpen(false);
     setRegisterForm({ 
       email: '', 
@@ -636,8 +640,8 @@ export default function Index() {
     });
     
     toast({
-      title: "Регистрация успешна",
-      description: `Добро пожаловать, ${newUser.name}!`
+      title: "Заявка отправлена",
+      description: "Ваша регистрация будет проверена администратором. Вы получите уведомление после одобрения."
     });
   };
   
@@ -653,23 +657,33 @@ export default function Index() {
     
     const user = users.find(u => u.email === loginForm.email && u.password === loginForm.password);
     
-    if (user) {
-      setCurrentUser({ email: user.email, name: user.name, phone: user.phone });
-      setIsLoggedIn(true);
-      setIsLoginDialogOpen(false);
-      setLoginForm({ email: '', password: '' });
-      
-      toast({
-        title: "Вход выполнен",
-        description: `Добро пожаловать, ${user.name}!`
-      });
-    } else {
+    if (!user) {
       toast({
         title: "Ошибка входа",
         description: "Неверный email или пароль",
         variant: "destructive"
       });
+      return;
     }
+    
+    if (!user.approved) {
+      toast({
+        title: "Доступ запрещен",
+        description: "Ваша регистрация ожидает одобрения администратором",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setCurrentUser({ email: user.email, name: user.name, phone: user.phone });
+    setIsLoggedIn(true);
+    setIsLoginDialogOpen(false);
+    setLoginForm({ email: '', password: '' });
+    
+    toast({
+      title: "Вход выполнен",
+      description: `Добро пожаловать, ${user.name}!`
+    });
   };
   
   const handleUserLogout = () => {
@@ -678,6 +692,22 @@ export default function Index() {
     toast({
       title: "Выход выполнен",
       description: "До свидания!"
+    });
+  };
+  
+  const handleApproveUser = (email: string) => {
+    setUsers(users.map(u => u.email === email ? {...u, approved: true} : u));
+    toast({
+      title: "Пользователь одобрен",
+      description: "Пользователь может войти в систему"
+    });
+  };
+  
+  const handleRejectUser = (email: string) => {
+    setUsers(users.filter(u => u.email !== email));
+    toast({
+      title: "Регистрация отклонена",
+      description: "Пользователь удалён из системы"
     });
   };
   
@@ -1695,7 +1725,7 @@ export default function Index() {
         </div>
 
         {isAdmin && (
-          <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-fade-in">
+          <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5 animate-fade-in">
             <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium opacity-90">Всего мероприятий</CardTitle>
@@ -1734,12 +1764,24 @@ export default function Index() {
             
             <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium opacity-90">На модерации</CardTitle>
+                <CardTitle className="text-sm font-medium opacity-90">Мероприятия на модерации</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div className="text-3xl font-bold">{pendingEvents.length}</div>
                   <Icon name="Clock" size={32} className="opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white border-0">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium opacity-90">Пользователи на модерации</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="text-3xl font-bold">{users.filter(u => !u.approved).length}</div>
+                  <Icon name="UserX" size={32} className="opacity-50" />
                 </div>
               </CardContent>
             </Card>
@@ -1859,7 +1901,7 @@ export default function Index() {
         )}
 
         <Tabs defaultValue="calendar" className="animate-scale-in bg-slate-50">
-          <TabsList className={`grid w-full max-w-2xl mx-auto ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'} mb-8`}>
+          <TabsList className={`grid w-full max-w-2xl mx-auto ${isAdmin ? 'grid-cols-5' : 'grid-cols-3'} mb-8`}>
             <TabsTrigger value="calendar" className="text-lg">
               <Icon name="CalendarDays" size={18} className="mr-2" />
               Календарь
@@ -1873,13 +1915,22 @@ export default function Index() {
               Прошедшие
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="pending" className="text-lg relative">
-                <Icon name="Clock" size={18} className="mr-2" />
-                На модерации
-                {pendingEvents.length > 0 && (
-                  <Badge className="ml-2 bg-orange-500">{pendingEvents.length}</Badge>
-                )}
-              </TabsTrigger>
+              <>
+                <TabsTrigger value="pending" className="text-lg relative">
+                  <Icon name="Clock" size={18} className="mr-2" />
+                  Мероприятия
+                  {pendingEvents.length > 0 && (
+                    <Badge className="ml-2 bg-orange-500">{pendingEvents.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="users" className="text-lg relative">
+                  <Icon name="Users" size={18} className="mr-2" />
+                  Пользователи
+                  {users.filter(u => !u.approved).length > 0 && (
+                    <Badge className="ml-2 bg-red-500">{users.filter(u => !u.approved).length}</Badge>
+                  )}
+                </TabsTrigger>
+              </>
             )}
           </TabsList>
 
@@ -2651,6 +2702,155 @@ export default function Index() {
                   ))
                 )}
               </div>
+            </TabsContent>
+          )}
+          
+          {isAdmin && (
+            <TabsContent value="users">
+              <div className="grid gap-6 md:grid-cols-2">
+                {users.filter(u => !u.approved).length === 0 ? (
+                  <Card className="col-span-full text-center py-12 border-2 border-dashed">
+                    <CardContent>
+                      <Icon name="CheckCircle" size={48} className="mx-auto text-green-500 mb-4" />
+                      <p className="text-lg text-muted-foreground">Нет пользователей на модерации</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  users.filter(u => !u.approved).map((user, index) => (
+                    <Card 
+                      key={user.email} 
+                      className="hover:shadow-xl transition-all duration-300 border-2 border-red-500 animate-fade-in"
+                      style={{ animationDelay: `${index * 100}ms` }}
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between mb-2">
+                          <Badge variant="default" className="bg-red-500 text-white">
+                            <Icon name="UserX" size={14} className="mr-1" />
+                            Ожидает одобрения
+                          </Badge>
+                          <Badge variant="outline">
+                            <Icon name={user.userType === 'individual' ? 'User' : 'Building'} size={14} className="mr-1" />
+                            {user.userType === 'individual' ? 'Физ. лицо' : 'Юр. лицо'}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-xl leading-tight">{user.name}</CardTitle>
+                        <CardDescription className="flex flex-col gap-1 mt-2">
+                          <div className="flex items-center gap-2">
+                            <Icon name="Mail" size={16} />
+                            {user.email}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Icon name="Phone" size={16} />
+                            {user.phone}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <Icon name="Calendar" size={14} />
+                            Подано: {new Date(user.submittedAt || '').toLocaleDateString('ru-RU')}
+                          </div>
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3 mb-4">
+                          {user.userType === 'individual' ? (
+                            <>
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">Дата рождения:</span>
+                                <span className="font-medium ml-2">{user.birthDate || 'Не указано'}</span>
+                              </div>
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">Паспорт:</span>
+                                <span className="font-medium ml-2">
+                                  {user.passportSeries} {user.passportNumber}
+                                </span>
+                              </div>
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">Выдан:</span>
+                                <span className="font-medium ml-2">{user.passportIssueDate}</span>
+                              </div>
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">Кем выдан:</span>
+                                <p className="mt-1 text-foreground text-xs">{user.passportIssuedBy}</p>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">ИНН:</span>
+                                <span className="font-medium ml-2">{user.inn}</span>
+                              </div>
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">Название:</span>
+                                <span className="font-medium ml-2">{user.companyName}</span>
+                              </div>
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">Юр. адрес:</span>
+                                <p className="mt-1 text-foreground text-xs">{user.legalAddress}</p>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                            onClick={() => handleApproveUser(user.email)}
+                          >
+                            <Icon name="Check" size={18} className="mr-2" />
+                            Одобрить
+                          </Button>
+                          <Button 
+                            variant="destructive"
+                            className="flex-1"
+                            onClick={() => handleRejectUser(user.email)}
+                          >
+                            <Icon name="X" size={18} className="mr-2" />
+                            Отклонить
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+              
+              {users.filter(u => u.approved).length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Icon name="UserCheck" size={24} className="text-green-600" />
+                    Одобренные пользователи ({users.filter(u => u.approved).length})
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {users.filter(u => u.approved).map((user) => (
+                      <Card key={user.email} className="border-green-200">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <Badge variant="outline" className="border-green-500 text-green-700">
+                              <Icon name="UserCheck" size={12} className="mr-1" />
+                              Активен
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {user.userType === 'individual' ? 'Физ. лицо' : 'Юр. лицо'}
+                            </Badge>
+                          </div>
+                          <CardTitle className="text-base">{user.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <Icon name="Mail" size={14} />
+                              <span className="truncate">{user.email}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Icon name="Phone" size={14} />
+                              {user.phone}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TabsContent>
           )}
         </Tabs>
