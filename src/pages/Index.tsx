@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -387,7 +387,10 @@ export default function Index() {
     passportIssuedBy?: string;
     approved?: boolean;
     submittedAt?: string;
-  }>>([]);
+  }>>(() => {
+    const savedUsers = localStorage.getItem('eventCalendarUsers');
+    return savedUsers ? JSON.parse(savedUsers) : [];
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [customSport, setCustomSport] = useState('');
   const [showCustomSportInput, setShowCustomSportInput] = useState(false);
@@ -443,6 +446,10 @@ export default function Index() {
     });
     return stats;
   }, [pastEvents]);
+
+  useEffect(() => {
+    localStorage.setItem('eventCalendarUsers', JSON.stringify(users));
+  }, [users]);
 
   const handleRegister = (eventId: number) => {
     const event = events.find(e => e.id === eventId);
