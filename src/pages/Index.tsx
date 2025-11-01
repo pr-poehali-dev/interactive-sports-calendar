@@ -2966,6 +2966,26 @@ export default function Index() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2 mb-4">
+                          {event.submittedBy && (() => {
+                            const submitter = users.find(u => u.email === event.submittedBy);
+                            return submitter ? (
+                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md mb-3">
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Icon name="User" size={16} className="text-blue-600" />
+                                  <span className="text-muted-foreground">Автор заявки:</span>
+                                  <span className="font-semibold text-blue-900">{submitter.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 ml-6">
+                                  <Icon name="Mail" size={12} />
+                                  {submitter.email}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 ml-6">
+                                  <Icon name="Phone" size={12} />
+                                  {submitter.phone}
+                                </div>
+                              </div>
+                            ) : null;
+                          })()}
                           <div className="text-sm">
                             <span className="text-muted-foreground">Организатор:</span>
                             <span className="font-medium ml-2">{event.organizer}</span>
