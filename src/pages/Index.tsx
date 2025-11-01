@@ -338,6 +338,7 @@ export default function Index() {
   const [selectedSport, setSelectedSport] = useState<SportType>('all');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [registeredEvents, setRegisteredEvents] = useState<number[]>([]);
+  const [selectedDocStatus, setSelectedDocStatus] = useState<'all' | 'red' | 'yellow' | 'blue' | 'green'>('all');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -418,7 +419,8 @@ export default function Index() {
       event.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.organizer.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (event.eventNumber && event.eventNumber.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesSport && matchesSearch;
+    const matchesDocStatus = selectedDocStatus === 'all' ? true : getDocumentStatus(event) === selectedDocStatus;
+    return matchesSport && matchesSearch && matchesDocStatus;
   });
 
   const upcomingEvents = filteredEvents.filter(e => e.status === 'upcoming');
@@ -2700,7 +2702,7 @@ export default function Index() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                   <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-red-500">
                     <div className="w-4 h-4 rounded-full bg-red-500 flex-shrink-0" />
                     <div className="text-sm">
@@ -2728,6 +2730,61 @@ export default function Index() {
                       <div className="font-semibold text-green-900">Полный комплект</div>
                       <div className="text-gray-600">Все документы и медиа загружены</div>
                     </div>
+                  </div>
+                </div>
+                
+                {/* Фильтр по статусу документов */}
+                <div className="pt-4 border-t">
+                  <Label className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Icon name="Filter" size={16} />
+                    Фильтр по статусу
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={selectedDocStatus === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedDocStatus('all')}
+                      className="flex items-center gap-2"
+                    >
+                      <Icon name="List" size={14} />
+                      Все мероприятия
+                    </Button>
+                    <Button
+                      variant={selectedDocStatus === 'red' ? 'destructive' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedDocStatus('red')}
+                      className="flex items-center gap-2"
+                    >
+                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                      Критические
+                    </Button>
+                    <Button
+                      variant={selectedDocStatus === 'yellow' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedDocStatus('yellow')}
+                      className={`flex items-center gap-2 ${selectedDocStatus === 'yellow' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}
+                    >
+                      <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                      Без протоколов
+                    </Button>
+                    <Button
+                      variant={selectedDocStatus === 'blue' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedDocStatus('blue')}
+                      className={`flex items-center gap-2 ${selectedDocStatus === 'blue' ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
+                    >
+                      <div className="w-3 h-3 rounded-full bg-blue-500" />
+                      Без медиа
+                    </Button>
+                    <Button
+                      variant={selectedDocStatus === 'green' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedDocStatus('green')}
+                      className={`flex items-center gap-2 ${selectedDocStatus === 'green' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}
+                    >
+                      <div className="w-3 h-3 rounded-full bg-green-500" />
+                      Полный комплект
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -2912,7 +2969,7 @@ export default function Index() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                   <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-red-500">
                     <div className="w-4 h-4 rounded-full bg-red-500 flex-shrink-0" />
                     <div className="text-sm">
@@ -2940,6 +2997,61 @@ export default function Index() {
                       <div className="font-semibold text-green-900">Полный комплект</div>
                       <div className="text-gray-600">Все документы и медиа загружены</div>
                     </div>
+                  </div>
+                </div>
+                
+                {/* Фильтр по статусу документов */}
+                <div className="pt-4 border-t">
+                  <Label className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Icon name="Filter" size={16} />
+                    Фильтр по статусу
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={selectedDocStatus === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedDocStatus('all')}
+                      className="flex items-center gap-2"
+                    >
+                      <Icon name="List" size={14} />
+                      Все мероприятия
+                    </Button>
+                    <Button
+                      variant={selectedDocStatus === 'red' ? 'destructive' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedDocStatus('red')}
+                      className="flex items-center gap-2"
+                    >
+                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                      Критические
+                    </Button>
+                    <Button
+                      variant={selectedDocStatus === 'yellow' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedDocStatus('yellow')}
+                      className={`flex items-center gap-2 ${selectedDocStatus === 'yellow' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}
+                    >
+                      <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                      Без протоколов
+                    </Button>
+                    <Button
+                      variant={selectedDocStatus === 'blue' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedDocStatus('blue')}
+                      className={`flex items-center gap-2 ${selectedDocStatus === 'blue' ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
+                    >
+                      <div className="w-3 h-3 rounded-full bg-blue-500" />
+                      Без медиа
+                    </Button>
+                    <Button
+                      variant={selectedDocStatus === 'green' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedDocStatus('green')}
+                      className={`flex items-center gap-2 ${selectedDocStatus === 'green' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}
+                    >
+                      <div className="w-3 h-3 rounded-full bg-green-500" />
+                      Полный комплект
+                    </Button>
                   </div>
                 </div>
               </CardContent>
