@@ -1699,6 +1699,66 @@ export default function Index() {
             </Button>
           )}
           
+          <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" title="Настройки">
+                <Icon name="Settings" size={18} />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Настройки администратора</DialogTitle>
+                <DialogDescription>
+                  Управление параметрами системы
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="admin-email">Email администратора</Label>
+                  <Input
+                    id="admin-email"
+                    type="email"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    placeholder="admin@example.com"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    На этот адрес будут приходить уведомления о новых регистрациях и заявках на мероприятия
+                  </p>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="admin-password">Пароль администратора</Label>
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    value={storedAdminPassword}
+                    onChange={(e) => setStoredAdminPassword(e.target.value)}
+                    placeholder="Введите новый пароль"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Пароль для входа в панель администратора
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsSettingsDialogOpen(false)}>
+                  Отмена
+                </Button>
+                <Button onClick={() => {
+                  setIsSettingsDialogOpen(false);
+                  toast({
+                    title: "Настройки сохранены",
+                    description: "Настройки администратора обновлены"
+                  });
+                }}>
+                  <Icon name="Save" size={18} className="mr-2" />
+                  Сохранить
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
           {!isAdmin ? (
             <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
               <DialogTrigger asChild>
@@ -1738,71 +1798,10 @@ export default function Index() {
               </DialogContent>
             </Dialog>
           ) : (
-            <>
-              <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" title="Настройки">
-                    <Icon name="Settings" size={18} />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Настройки администратора</DialogTitle>
-                    <DialogDescription>
-                      Управление параметрами системы
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="admin-email">Email администратора</Label>
-                      <Input
-                        id="admin-email"
-                        type="email"
-                        value={adminEmail}
-                        onChange={(e) => setAdminEmail(e.target.value)}
-                        placeholder="admin@example.com"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        На этот адрес будут приходить уведомления о новых регистрациях и заявках на мероприятия
-                      </p>
-                    </div>
-                    
-                    <div className="grid gap-2">
-                      <Label htmlFor="admin-password">Пароль администратора</Label>
-                      <Input
-                        id="admin-password"
-                        type="password"
-                        value={storedAdminPassword}
-                        onChange={(e) => setStoredAdminPassword(e.target.value)}
-                        placeholder="Введите новый пароль"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Пароль для входа в панель администратора
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button variant="outline" onClick={() => setIsSettingsDialogOpen(false)}>
-                      Отмена
-                    </Button>
-                    <Button onClick={() => {
-                      setIsSettingsDialogOpen(false);
-                      toast({
-                        title: "Настройки сохранены",
-                        description: "Настройки администратора обновлены"
-                      });
-                    }}>
-                      <Icon name="Save" size={18} className="mr-2" />
-                      Сохранить
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              <Button variant="outline" onClick={handleAdminLogout} className="gap-2">
-                <Icon name="LogOut" size={18} />
-                Выйти из режима администратора
-              </Button>
-            </>
+            <Button variant="outline" onClick={handleAdminLogout} className="gap-2">
+              <Icon name="LogOut" size={18} />
+              Выйти из режима администратора
+            </Button>
           )}
         </div>
         
