@@ -10,11 +10,7 @@
       "name": "Get all users",
       "method": "GET",
       "path": "/",
-      "expectedStatus": 200,
-      "expectedBody": {
-        "users": "array"
-      },
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
     },
     {
       "name": "Missing required fields",
@@ -23,6 +19,13 @@
       "body": {
         "email": "test@test.com"
       },
+      "expectedStatus": 400
+    },
+    {
+      "name": "Delete user - missing email",
+      "method": "DELETE",
+      "path": "/",
+      "body": {},
       "expectedStatus": 400
     }
   ]

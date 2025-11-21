@@ -364,6 +364,11 @@ export default function Index() {
   const [manageFilesEvent, setManageFilesEvent] = useState<Event | null>(null);
   const [uploadFileType, setUploadFileType] = useState<'document' | 'media'>('document');
   const [uploadMediaType, setUploadMediaType] = useState<'image' | 'video'>('image');
+  const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false);
+  const [isSendMessageDialogOpen, setIsSendMessageDialogOpen] = useState(false);
+  const [messageRecipient, setMessageRecipient] = useState<string>('');
+  const [messageSubject, setMessageSubject] = useState<string>('');
+  const [messageBody, setMessageBody] = useState<string>('');
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ 
     email: '', 
@@ -1438,6 +1443,155 @@ export default function Index() {
     });
   };
   
+  const handleDeleteCurrentUserAccount = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const response = await fetch('https://functions.poehali.dev/9cd5f036-0bca-495b-9742-de598c37754f', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: currentUser.email })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete account');
+      }
+      
+      setUsers(users.filter(u => u.email !== currentUser.email));
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      setIsDeleteAccountDialogOpen(false);
+      
+      toast({
+        title: "Аккаунт удалён",
+        description: "Ваш аккаунт успешно удалён из системы"
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить аккаунт. Попробуйте позже.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleAdminDeleteUser = async (email: string) => {
+    const user = users.find(u => u.email === email);
+    if (!user) return;
+    
+    try {
+      const response = await fetch('https://functions.poehali.dev/9cd5f036-0bca-495b-9742-de598c37754f', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
+      }
+      
+      setUsers(users.filter(u => u.email !== email));
+      
+      toast({
+        title: "Пользователь удалён",
+        description: `${user.name} удалён из системы`
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить пользователя. Попробуйте позже.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleSendMessage = async () => {
+    if (!messageRecipient || !messageSubject || !messageBody) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните все поля сообщения",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #2563eb 0%, #dc2626 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+            .message-body { background: white; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #2563eb; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>✉️ Сообщение от администратора</h1>
+            </div>
+            <div class="content">
+              <p>Добрый день!</p>
+              <p>Вам пришло сообщение от администратора <strong>Единого календарного плана м.о. Истра</strong>:</p>
+              
+              <div class="message-body">
+                <p style="white-space: pre-wrap;">${messageBody}</p>
+              </div>
+              
+              <p>С уважением,<br>Управление физической культуры и спорта м.о. Истра</p>
+            </div>
+            <div class="footer">
+              <p>г. Истра, ул. Ленина, д. 81 | +7 (495) 994-85-55 (доб. 429)</p>
+              <p>info@sportvokrugistra.ru</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    try {
+      const response = await fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: messageRecipient,
+          subject: `📧 ${messageSubject} - Единый календарный план м.о. Истра`,
+          html: emailHtml
+        })
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Сообщение отправлено ✅",
+          description: `Email отправлен на ${messageRecipient}`
+        });
+        setIsSendMessageDialogOpen(false);
+        setMessageRecipient('');
+        setMessageSubject('');
+        setMessageBody('');
+      } else {
+        const errorData = await response.json();
+        console.error('Email error:', errorData);
+        toast({
+          title: "Ошибка отправки ⚠️",
+          description: "Проверьте SMTP настройки",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Email send error:', error);
+      toast({
+        title: "Ошибка отправки ⚠️",
+        description: "Не удалось отправить сообщение",
+        variant: "destructive"
+      });
+    }
+  };
+  
   const handleOpenAddDialog = () => {
     if (!isLoggedIn && !isAdmin) {
       toast({
@@ -1822,11 +1976,16 @@ export default function Index() {
           )}
           
           {isLoggedIn && !isAdmin && (
-            <Button variant="outline" onClick={handleUserLogout} className="gap-2">
-              <Icon name="User" size={18} />
-              {currentUser?.name}
-              <Icon name="LogOut" size={16} className="ml-2" />
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setIsDeleteAccountDialogOpen(true)} className="gap-2" title="Удалить аккаунт">
+                <Icon name="Trash2" size={18} />
+              </Button>
+              <Button variant="outline" onClick={handleUserLogout} className="gap-2">
+                <Icon name="User" size={18} />
+                {currentUser?.name}
+                <Icon name="LogOut" size={16} className="ml-2" />
+              </Button>
+            </>
           )}
           
           {!isAdmin ? (
@@ -4133,7 +4292,7 @@ export default function Index() {
                           <CardTitle className="text-base">{user.name}</CardTitle>
                         </CardHeader>
                         <CardContent className="pt-0">
-                          <div className="space-y-1 text-sm text-muted-foreground">
+                          <div className="space-y-1 text-sm text-muted-foreground mb-3">
                             <div className="flex items-center gap-2">
                               <Icon name="Mail" size={14} />
                               <span className="truncate">{user.email}</span>
@@ -4142,6 +4301,31 @@ export default function Index() {
                               <Icon name="Phone" size={14} />
                               {user.phone}
                             </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => {
+                                setMessageRecipient(user.email);
+                                setMessageSubject('');
+                                setMessageBody('');
+                                setIsSendMessageDialogOpen(true);
+                              }}
+                            >
+                              <Icon name="Mail" size={14} className="mr-1" />
+                              Написать
+                            </Button>
+                            <Button 
+                              variant="destructive"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => handleAdminDeleteUser(user.email)}
+                            >
+                              <Icon name="Trash2" size={14} className="mr-1" />
+                              Удалить
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -4715,6 +4899,102 @@ export default function Index() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Account Dialog */}
+      <Dialog open={isDeleteAccountDialogOpen} onOpenChange={setIsDeleteAccountDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Icon name="AlertTriangle" size={24} />
+              Удаление аккаунта
+            </DialogTitle>
+            <DialogDescription>
+              Вы уверены, что хотите удалить свой аккаунт? Это действие необратимо.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-900">
+                <strong>Внимание:</strong> После удаления аккаунта:
+              </p>
+              <ul className="list-disc ml-5 mt-2 text-sm text-red-800">
+                <li>Все ваши данные будут удалены</li>
+                <li>Вы потеряете доступ к системе</li>
+                <li>Восстановление будет невозможно</li>
+              </ul>
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)}>
+              Отмена
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteCurrentUserAccount}>
+              <Icon name="Trash2" size={18} className="mr-2" />
+              Удалить аккаунт
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Send Message Dialog */}
+      <Dialog open={isSendMessageDialogOpen} onOpenChange={setIsSendMessageDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="Mail" size={24} />
+              Отправить сообщение пользователю
+            </DialogTitle>
+            <DialogDescription>
+              Отправить личное сообщение на email пользователя
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="message-recipient">Email получателя *</Label>
+              <Input
+                id="message-recipient"
+                type="email"
+                value={messageRecipient}
+                onChange={(e) => setMessageRecipient(e.target.value)}
+                placeholder="user@example.com"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="message-subject">Тема сообщения *</Label>
+              <Input
+                id="message-subject"
+                value={messageSubject}
+                onChange={(e) => setMessageSubject(e.target.value)}
+                placeholder="Например: Важное уведомление"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="message-body">Текст сообщения *</Label>
+              <Textarea
+                id="message-body"
+                value={messageBody}
+                onChange={(e) => setMessageBody(e.target.value)}
+                placeholder="Введите текст сообщения..."
+                rows={8}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => {
+              setIsSendMessageDialogOpen(false);
+              setMessageRecipient('');
+              setMessageSubject('');
+              setMessageBody('');
+            }}>
+              Отмена
+            </Button>
+            <Button onClick={handleSendMessage}>
+              <Icon name="Send" size={18} className="mr-2" />
+              Отправить
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

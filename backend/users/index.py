@@ -171,6 +171,38 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
+    # DELETE - удаление пользователя
+    if method == 'DELETE':
+        body_str = event.get('body', '{}')
+        if not body_str or body_str.strip() == '':
+            body_str = '{}'
+        body_data = json.loads(body_str)
+        email = body_data.get('email')
+        
+        if not email:
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Missing email'}),
+                'isBase64Encoded': False
+            }
+        
+        conn = psycopg2.connect(database_url)
+        cur = conn.cursor()
+        
+        cur.execute("DELETE FROM users WHERE email = %s", (email,))
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'success': True, 'message': 'User deleted successfully'}),
+            'isBase64Encoded': False
+        }
+    
     return {
         'statusCode': 405,
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
