@@ -1413,6 +1413,21 @@ export default function Index() {
     });
   };
   
+  const handleToggleEventStatus = (eventId: number) => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+    
+    const newStatus = event.status === 'upcoming' ? 'past' : 'upcoming';
+    setEvents(events.map(e => 
+      e.id === eventId ? { ...e, status: newStatus } : e
+    ));
+    
+    toast({
+      title: "Статус изменен",
+      description: `Мероприятие перемещено в раздел "${newStatus === 'upcoming' ? 'Предстоящие' : 'Прошедшие'}"`
+    });
+  };
+  
   const handleOpenAddDialog = () => {
     if (!isLoggedIn && !isAdmin) {
       toast({
@@ -2992,26 +3007,36 @@ export default function Index() {
                                     </Button>
                                   )}
                                   {isAdmin && (
-                                    <div className="flex gap-2">
+                                    <>
                                       <Button 
-                                        variant="outline" 
-                                        className="flex-1"
-                                        onClick={() => {
-                                          handleEditEvent(event);
-                                        }}
+                                        variant="secondary" 
+                                        className="w-full"
+                                        onClick={() => handleToggleEventStatus(event.id)}
                                       >
-                                        <Icon name="Edit" size={16} className="mr-2" />
-                                        Редактировать
+                                        <Icon name={event.status === 'upcoming' ? 'Archive' : 'ArchiveRestore'} size={16} className="mr-2" />
+                                        {event.status === 'upcoming' ? 'Переместить в прошедшие' : 'Вернуть в предстоящие'}
                                       </Button>
-                                      <Button 
-                                        variant="destructive" 
-                                        className="flex-1"
-                                        onClick={() => handleRejectEvent(event.id)}
-                                      >
-                                        <Icon name="Trash2" size={16} className="mr-2" />
-                                        Удалить
-                                      </Button>
-                                    </div>
+                                      <div className="flex gap-2">
+                                        <Button 
+                                          variant="outline" 
+                                          className="flex-1"
+                                          onClick={() => {
+                                            handleEditEvent(event);
+                                          }}
+                                        >
+                                          <Icon name="Edit" size={16} className="mr-2" />
+                                          Редактировать
+                                        </Button>
+                                        <Button 
+                                          variant="destructive" 
+                                          className="flex-1"
+                                          onClick={() => handleRejectEvent(event.id)}
+                                        >
+                                          <Icon name="Trash2" size={16} className="mr-2" />
+                                          Удалить
+                                        </Button>
+                                      </div>
+                                    </>
                                   )}
                                 </div>
                               )}
@@ -3284,26 +3309,36 @@ export default function Index() {
                               </Button>
                             )}
                             {isAdmin && (
-                              <div className="flex gap-2">
+                              <>
                                 <Button 
-                                  variant="outline" 
-                                  className="flex-1"
-                                  onClick={() => {
-                                    handleEditEvent(event);
-                                  }}
+                                  variant="secondary" 
+                                  className="w-full"
+                                  onClick={() => handleToggleEventStatus(event.id)}
                                 >
-                                  <Icon name="Edit" size={16} className="mr-2" />
-                                  Редактировать
+                                  <Icon name={event.status === 'upcoming' ? 'Archive' : 'ArchiveRestore'} size={16} className="mr-2" />
+                                  {event.status === 'upcoming' ? 'Переместить в прошедшие' : 'Вернуть в предстоящие'}
                                 </Button>
-                                <Button 
-                                  variant="destructive" 
-                                  className="flex-1"
-                                  onClick={() => handleRejectEvent(event.id)}
-                                >
-                                  <Icon name="Trash2" size={16} className="mr-2" />
-                                  Удалить
-                                </Button>
-                              </div>
+                                <div className="flex gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    className="flex-1"
+                                    onClick={() => {
+                                      handleEditEvent(event);
+                                    }}
+                                  >
+                                    <Icon name="Edit" size={16} className="mr-2" />
+                                    Редактировать
+                                  </Button>
+                                  <Button 
+                                    variant="destructive" 
+                                    className="flex-1"
+                                    onClick={() => handleRejectEvent(event.id)}
+                                  >
+                                    <Icon name="Trash2" size={16} className="mr-2" />
+                                    Удалить
+                                  </Button>
+                                </div>
+                              </>
                             )}
                           </div>
                         )}
@@ -3634,6 +3669,14 @@ export default function Index() {
                             )}
                             {isAdmin && (
                               <>
+                                <Button 
+                                  variant="secondary" 
+                                  className="w-full"
+                                  onClick={() => handleToggleEventStatus(event.id)}
+                                >
+                                  <Icon name={event.status === 'upcoming' ? 'Archive' : 'ArchiveRestore'} size={16} className="mr-2" />
+                                  {event.status === 'upcoming' ? 'Переместить в прошедшие' : 'Вернуть в предстоящие'}
+                                </Button>
                                 <h3 className="font-semibold mb-3 flex items-center gap-2">
                                   <Icon name="FilePlus" size={18} className="text-primary" />
                                   Загрузить документы (Админ)
