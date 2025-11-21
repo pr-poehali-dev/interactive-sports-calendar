@@ -1062,101 +1062,108 @@ export default function Index() {
       };
       
       setUsers([...users, newUser]);
-    
-    const userTypeText = newUser.userType === 'individual' ? 'Физическое лицо' : 'Юридическое лицо';
-    const adminEmailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .info-block { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #667eea; }
-            .info-row { margin: 8px 0; }
-            .label { font-weight: bold; color: #667eea; }
-            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🔔 Новая регистрация пользователя</h1>
-            </div>
-            <div class="content">
-              <p>Поступила новая заявка на регистрацию в системе "Единый календарный план м.о. Истра".</p>
-              
-              <div class="info-block">
-                <div class="info-row"><span class="label">Тип пользователя:</span> ${userTypeText}</div>
-                <div class="info-row"><span class="label">ФИО / Название:</span> ${newUser.name}</div>
-                <div class="info-row"><span class="label">Email:</span> ${newUser.email}</div>
-                <div class="info-row"><span class="label">Телефон:</span> ${newUser.phone}</div>
-                <div class="info-row"><span class="label">Дата подачи заявки:</span> ${new Date(newUser.submittedAt!).toLocaleString('ru-RU')}</div>
+      
+      const userTypeText = newUser.userType === 'individual' ? 'Физическое лицо' : 'Юридическое лицо';
+      const adminEmailHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+              .info-block { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #667eea; }
+              .info-row { margin: 8px 0; }
+              .label { font-weight: bold; color: #667eea; }
+              .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>🔔 Новая регистрация пользователя</h1>
               </div>
-              
-              ${newUser.userType === 'individual' ? `
+              <div class="content">
+                <p>Поступила новая заявка на регистрацию в системе "Единый календарный план м.о. Истра".</p>
+                
                 <div class="info-block">
-                  <h3 style="margin-top: 0; color: #667eea;">Паспортные данные</h3>
-                  <div class="info-row"><span class="label">Дата рождения:</span> ${newUser.birthDate}</div>
-                  <div class="info-row"><span class="label">Серия и номер паспорта:</span> ${newUser.passportSeries} ${newUser.passportNumber}</div>
-                  <div class="info-row"><span class="label">Дата выдачи:</span> ${newUser.passportIssueDate}</div>
-                  <div class="info-row"><span class="label">Кем выдан:</span> ${newUser.passportIssuedBy}</div>
+                  <div class="info-row"><span class="label">Тип пользователя:</span> ${userTypeText}</div>
+                  <div class="info-row"><span class="label">ФИО / Название:</span> ${newUser.name}</div>
+                  <div class="info-row"><span class="label">Email:</span> ${newUser.email}</div>
+                  <div class="info-row"><span class="label">Телефон:</span> ${newUser.phone}</div>
+                  <div class="info-row"><span class="label">Дата подачи заявки:</span> ${new Date(newUser.submittedAt!).toLocaleString('ru-RU')}</div>
                 </div>
-              ` : `
-                <div class="info-block">
-                  <h3 style="margin-top: 0; color: #667eea;">Данные организации</h3>
-                  <div class="info-row"><span class="label">ИНН:</span> ${newUser.inn}</div>
-                  <div class="info-row"><span class="label">Название организации:</span> ${newUser.companyName}</div>
-                  <div class="info-row"><span class="label">Юридический адрес:</span> ${newUser.legalAddress}</div>
-                </div>
-              `}
-              
-              <p style="margin-top: 30px;">Пожалуйста, проверьте данные пользователя и одобрите или отклоните заявку в панели администратора.</p>
+                
+                ${newUser.userType === 'individual' ? `
+                  <div class="info-block">
+                    <h3 style="margin-top: 0; color: #667eea;">Паспортные данные</h3>
+                    <div class="info-row"><span class="label">Дата рождения:</span> ${newUser.birthDate}</div>
+                    <div class="info-row"><span class="label">Серия и номер паспорта:</span> ${newUser.passportSeries} ${newUser.passportNumber}</div>
+                    <div class="info-row"><span class="label">Дата выдачи:</span> ${newUser.passportIssueDate}</div>
+                    <div class="info-row"><span class="label">Кем выдан:</span> ${newUser.passportIssuedBy}</div>
+                  </div>
+                ` : `
+                  <div class="info-block">
+                    <h3 style="margin-top: 0; color: #667eea;">Данные организации</h3>
+                    <div class="info-row"><span class="label">ИНН:</span> ${newUser.inn}</div>
+                    <div class="info-row"><span class="label">Название организации:</span> ${newUser.companyName}</div>
+                    <div class="info-row"><span class="label">Юридический адрес:</span> ${newUser.legalAddress}</div>
+                  </div>
+                `}
+                
+                <p style="margin-top: 30px;">Пожалуйста, проверьте данные пользователя и одобрите или отклоните заявку в панели администратора.</p>
+              </div>
+              <div class="footer">
+                <p>Это автоматическое уведомление из системы "Единый календарный план м.о. Истра"</p>
+              </div>
             </div>
-            <div class="footer">
-              <p>Это автоматическое уведомление из системы "Единый календарный план м.о. Истра"</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-    
-    fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        to: adminEmail,
-        subject: '🔔 Новая регистрация пользователя - Единый календарный план',
-        html: adminEmailHtml
-      })
-    }).catch(() => {
-      console.log('Email notification failed (non-critical)');
-    });
-    
-    setIsRegisterDialogOpen(false);
-    setRegisterForm({ 
-      email: '', 
-      password: '', 
-      name: '', 
-      phone: '',
-      userType: 'individual',
-      inn: '',
-      companyName: '',
-      legalAddress: '',
-      birthDate: '',
-      passportSeries: '',
-      passportNumber: '',
-      passportIssueDate: '',
-      passportIssuedBy: '',
-      agreeToTerms: false
-    });
-    
-    toast({
-      title: "Заявка отправлена",
-      description: "Ваша регистрация будет проверена администратором. Вы получите уведомление после одобрения."
-    });
+          </body>
+        </html>
+      `;
+      
+      fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: adminEmail,
+          subject: '🔔 Новая регистрация пользователя - Единый календарный план',
+          html: adminEmailHtml
+        })
+      }).catch(() => {
+        console.log('Email notification failed (non-critical)');
+      });
+      
+      setIsRegisterDialogOpen(false);
+      setRegisterForm({ 
+        email: '', 
+        password: '', 
+        name: '', 
+        phone: '',
+        userType: 'individual',
+        inn: '',
+        companyName: '',
+        legalAddress: '',
+        birthDate: '',
+        passportSeries: '',
+        passportNumber: '',
+        passportIssueDate: '',
+        passportIssuedBy: '',
+        agreeToTerms: false
+      });
+      
+      toast({
+        title: "Заявка отправлена",
+        description: "Ваша регистрация будет проверена администратором. Вы получите уведомление после одобрения."
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось отправить заявку. Попробуйте позже.",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleUserLogin = () => {
