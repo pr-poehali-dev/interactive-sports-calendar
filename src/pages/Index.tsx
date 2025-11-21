@@ -757,19 +757,24 @@ export default function Index() {
         
         if (response.ok) {
           toast({
-            title: "Мероприятие одобрено",
-            description: `"${event.title}" добавлено в календарь. Email отправлен организатору.`
+            title: "Мероприятие одобрено ✅",
+            description: `"${event.title}" добавлено. Email отправлен организатору.`
           });
         } else {
+          const errorData = await response.json();
+          console.error('Email error:', errorData);
           toast({
-            title: "Мероприятие одобрено",
-            description: `"${event.title}" добавлено в календарь. Email не отправлен.`
+            title: "Мероприятие одобрено ✅",
+            description: `"${event.title}" добавлено. Email не отправлен ⚠️`,
+            variant: "destructive"
           });
         }
       } catch (error) {
+        console.error('Email send error:', error);
         toast({
-          title: "Мероприятие одобрено",
-          description: `"${event.title}" добавлено в календарь. Email не отправлен.`
+          title: "Мероприятие одобрено ✅",
+          description: `"${event.title}" добавлено. Email не отправлен ⚠️`,
+          variant: "destructive"
         });
       }
     } else {
@@ -1308,19 +1313,24 @@ export default function Index() {
       
       if (response.ok) {
         toast({
-          title: "Пользователь одобрен",
-          description: `Email-уведомление отправлено на ${email}`
+          title: "Пользователь одобрен ✅",
+          description: `Email отправлен на ${email}`
         });
       } else {
+        const errorData = await response.json();
+        console.error('Email error:', errorData);
         toast({
-          title: "Пользователь одобрен",
-          description: "Email не отправлен - проверьте настройки SMTP"
+          title: "Пользователь одобрен ✅",
+          description: "Email не отправлен ⚠️ Проверьте SMTP настройки",
+          variant: "destructive"
         });
       }
     } catch (error) {
+      console.error('Email send error:', error);
       toast({
-        title: "Пользователь одобрен",
-        description: "Email не отправлен - ошибка подключения"
+        title: "Пользователь одобрен ✅",
+        description: "Email не отправлен ⚠️ Проверьте SMTP настройки",
+        variant: "destructive"
       });
     }
   };
@@ -1873,6 +1883,22 @@ export default function Index() {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <Icon name="Info" size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-blue-900">
+                          <p className="font-semibold mb-1">Настройка email-уведомлений</p>
+                          <p>Для отправки уведомлений настройте SMTP в разделе Secrets проекта:</p>
+                          <ul className="list-disc ml-4 mt-1 text-xs">
+                            <li>SMTP_HOST (smtp.gmail.com)</li>
+                            <li>SMTP_PORT (587)</li>
+                            <li>SMTP_USER (ваш email)</li>
+                            <li>SMTP_PASSWORD (app password)</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                    
                     <div className="grid gap-2">
                       <Label htmlFor="admin-email">Email администратора</Label>
                       <Input

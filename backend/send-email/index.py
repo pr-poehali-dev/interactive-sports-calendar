@@ -1,5 +1,6 @@
 import json
 import smtplib
+import socket
 import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -70,29 +71,60 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     msg.attach(html_part)
     
     try:
-        server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
+        print(f'Connecting to SMTP {smtp_host}:{smtp_port}')
+        server = smtplib.SMTP(smtp_host, smtp_port, timeout=15)
+        print('SMTP connection established')
+        
         server.starttls()
+        print('TLS started')
+        
         server.login(smtp_user, smtp_password)
+        print('SMTP login successful')
+        
         server.send_message(msg)
+        print(f'Email sent to {to_email}')
+        
         server.quit()
         
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'success': True, 'message': 'Email sent successfully'}),
+            'body': json.dumps({'success': True, 'message': f'Email sent to {to_email}'}),
+            'isBase64Encoded': False
+        }
+    except smtplib.SMTPAuthenticationError as e:
+        error_msg = f'SMTP authentication failed: {str(e)}'
+        print(error_msg)
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': error_msg, 'type': 'auth'}),
             'isBase64Encoded': False
         }
     except smtplib.SMTPException as e:
+        error_msg = f'SMTP error: {str(e)}'
+        print(error_msg)
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': f'SMTP error: {str(e)}'}),
+            'body': json.dumps({'error': error_msg, 'type': 'smtp'}),
+            'isBase64Encoded': False
+        }
+    except socket.timeout as e:
+        error_msg = f'SMTP timeout: connection to {smtp_host}:{smtp_port} timed out'
+        print(error_msg)
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': error_msg, 'type': 'timeout'}),
             'isBase64Encoded': False
         }
     except Exception as e:
+        error_msg = f'Failed to send email: {str(e)}'
+        print(error_msg)
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': f'Failed to send email: {str(e)}'}),
+            'body': json.dumps({'error': error_msg, 'type': 'unknown'}),
             'isBase64Encoded': False
         }
