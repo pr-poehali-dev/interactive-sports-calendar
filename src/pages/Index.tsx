@@ -424,6 +424,26 @@ export default function Index() {
     status: 'upcoming'
   });
 
+  useEffect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const updatedEvents = events.map(event => {
+      const eventDate = new Date(event.date);
+      eventDate.setHours(0, 0, 0, 0);
+      
+      if (eventDate < today && event.status === 'upcoming') {
+        return { ...event, status: 'past' as const };
+      }
+      return event;
+    });
+    
+    const hasChanges = updatedEvents.some((e, i) => e.status !== events[i].status);
+    if (hasChanges) {
+      setEvents(updatedEvents);
+    }
+  }, [events]);
+
   const approvedEvents = events.filter(event => event.approved);
   const pendingEvents = events.filter(event => !event.approved);
   
