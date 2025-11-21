@@ -369,6 +369,10 @@ export default function Index() {
   const [messageRecipient, setMessageRecipient] = useState<string>('');
   const [messageSubject, setMessageSubject] = useState<string>('');
   const [messageBody, setMessageBody] = useState<string>('');
+  const [isBroadcastDialogOpen, setIsBroadcastDialogOpen] = useState(false);
+  const [broadcastSubject, setBroadcastSubject] = useState<string>('');
+  const [broadcastBody, setBroadcastBody] = useState<string>('');
+  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ 
     email: '', 
@@ -1587,6 +1591,116 @@ export default function Index() {
       toast({
         title: "Ошибка отправки ⚠️",
         description: "Не удалось отправить сообщение",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleBroadcastMessage = async () => {
+    if (!broadcastSubject || !broadcastBody) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните тему и текст рассылки",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const approvedUsers = users.filter(u => u.approved);
+    if (approvedUsers.length === 0) {
+      toast({
+        title: "Нет получателей",
+        description: "Нет одобренных пользователей для рассылки",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #2563eb 0%, #dc2626 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+            .message-body { background: white; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #2563eb; }
+            .badge { display: inline-block; background: #2563eb; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-bottom: 15px; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>📢 Важное объявление</h1>
+            </div>
+            <div class="content">
+              <span class="badge">МАССОВАЯ РАССЫЛКА</span>
+              <p>Добрый день!</p>
+              <p>Администрация <strong>Единого календарного плана м.о. Истра</strong> информирует:</p>
+              
+              <div class="message-body">
+                <p style="white-space: pre-wrap;">${broadcastBody}</p>
+              </div>
+              
+              <p>С уважением,<br>Управление физической культуры и спорта м.о. Истра</p>
+            </div>
+            <div class="footer">
+              <p>г. Истра, ул. Ленина, д. 81 | +7 (495) 994-85-55 (доб. 429)</p>
+              <p>info@sportvokrugistra.ru</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    setIsSendingBroadcast(true);
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const user of approvedUsers) {
+      try {
+        const response = await fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: user.email,
+            subject: `📢 ${broadcastSubject} - Единый календарный план м.о. Истра`,
+            html: emailHtml
+          })
+        });
+        
+        if (response.ok) {
+          successCount++;
+        } else {
+          failCount++;
+          console.error(`Failed to send to ${user.email}`);
+        }
+        
+        // Задержка между отправками чтобы не перегружать SMTP
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        failCount++;
+        console.error(`Error sending to ${user.email}:`, error);
+      }
+    }
+    
+    setIsSendingBroadcast(false);
+    setIsBroadcastDialogOpen(false);
+    setBroadcastSubject('');
+    setBroadcastBody('');
+    
+    if (successCount > 0) {
+      toast({
+        title: "Рассылка завершена ✅",
+        description: `Отправлено: ${successCount} из ${approvedUsers.length}${failCount > 0 ? `. Ошибок: ${failCount}` : ''}`
+      });
+    } else {
+      toast({
+        title: "Ошибка рассылки ⚠️",
+        description: "Не удалось отправить ни одно сообщение. Проверьте SMTP настройки.",
         variant: "destructive"
       });
     }
@@ -4132,6 +4246,18 @@ export default function Index() {
           
           {isAdmin && (
             <TabsContent value="users">
+              {users.filter(u => u.approved).length > 0 && (
+                <div className="mb-6">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    size="lg"
+                    onClick={() => setIsBroadcastDialogOpen(true)}
+                  >
+                    <Icon name="Megaphone" size={20} className="mr-2" />
+                    Массовая рассылка всем пользователям ({users.filter(u => u.approved).length})
+                  </Button>
+                </div>
+              )}
               <div className="grid gap-6 md:grid-cols-2">
                 {users.filter(u => !u.approved).length === 0 ? (
                   <Card className="col-span-full text-center py-12 border-2 border-dashed">
@@ -4993,6 +5119,88 @@ export default function Index() {
             <Button onClick={handleSendMessage}>
               <Icon name="Send" size={18} className="mr-2" />
               Отправить
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Broadcast Message Dialog */}
+      <Dialog open={isBroadcastDialogOpen} onOpenChange={setIsBroadcastDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="Megaphone" size={24} className="text-blue-600" />
+              Массовая рассылка
+            </DialogTitle>
+            <DialogDescription>
+              Отправить сообщение всем одобренным пользователям ({users.filter(u => u.approved).length} чел.)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Icon name="Info" size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-blue-900">
+                  <p className="font-semibold mb-1">Важная информация</p>
+                  <p>Сообщение будет отправлено всем одобренным пользователям системы. Между отправками автоматически делается пауза 0.5 секунды, чтобы не перегружать SMTP сервер.</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="broadcast-subject">Тема рассылки *</Label>
+              <Input
+                id="broadcast-subject"
+                value={broadcastSubject}
+                onChange={(e) => setBroadcastSubject(e.target.value)}
+                placeholder="Например: Важное объявление"
+                disabled={isSendingBroadcast}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="broadcast-body">Текст сообщения *</Label>
+              <Textarea
+                id="broadcast-body"
+                value={broadcastBody}
+                onChange={(e) => setBroadcastBody(e.target.value)}
+                placeholder="Введите текст сообщения для всех пользователей..."
+                rows={10}
+                disabled={isSendingBroadcast}
+              />
+              <p className="text-xs text-muted-foreground">
+                Получатели: {users.filter(u => u.approved).map(u => u.name).join(', ')}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsBroadcastDialogOpen(false);
+                setBroadcastSubject('');
+                setBroadcastBody('');
+              }}
+              disabled={isSendingBroadcast}
+            >
+              Отмена
+            </Button>
+            <Button 
+              onClick={handleBroadcastMessage}
+              disabled={isSendingBroadcast}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            >
+              {isSendingBroadcast ? (
+                <>
+                  <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
+                  Отправка...
+                </>
+              ) : (
+                <>
+                  <Icon name="Send" size={18} className="mr-2" />
+                  Отправить всем
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>
