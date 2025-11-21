@@ -1,0 +1,29 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS request for CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Missing fields validation",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "fullName": "Тест"
+      },
+      "expectedStatus": 400
+    },
+    {
+      "name": "Get all registrations",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "registrations": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

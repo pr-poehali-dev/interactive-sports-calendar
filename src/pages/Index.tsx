@@ -381,6 +381,14 @@ export default function Index() {
     passportIssuedBy: '',
     agreeToTerms: false
   });
+  const [registrations, setRegistrations] = useState<Array<{
+    id: number;
+    fullName: string;
+    phone: string;
+    email: string;
+    eventName: string;
+    createdAt: string;
+  }>>([]);
   const [users, setUsers] = useState<Array<User & { 
     password: string;
     userType?: 'individual' | 'legal';
@@ -546,6 +554,28 @@ export default function Index() {
         description: `"${eventToAdd.title}" успешно добавлено в календарь`
       });
     } else {
+      // Сохраняем заявку в базу данных (основной метод)
+      fetch('https://functions.poehali.dev/c7d95915-b55a-4c1f-a5ad-58bbb6f2cb28', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: currentUser?.name || 'Неизвестный',
+          phone: currentUser?.phone || 'Не указан',
+          email: currentUser?.email || 'Не указан',
+          eventName: `${eventToAdd.title} (${new Date(eventToAdd.date).toLocaleDateString('ru-RU')})`
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log('Заявка сохранена в БД:', data.id);
+        }
+      })
+      .catch(error => {
+        console.error('Ошибка сохранения в БД:', error);
+      });
+      
+      // Email как дополнительный канал уведомлений
       const eventEmailHtml = `
         <!DOCTYPE html>
         <html>
@@ -613,8 +643,8 @@ export default function Index() {
       });
       
       toast({
-        title: "Отправлено на модерацию",
-        description: `"${eventToAdd.title}" будет добавлено после проверки администратором`
+        title: "Заявка отправлена",
+        description: `"${eventToAdd.title}" сохранена и отправлена на модерацию`
       });
     }
     
@@ -915,11 +945,23 @@ export default function Index() {
     });
   };
   
-  const handleAdminLogin = () => {
+  const handleAdminLogin = async () => {
     if (adminPassword === storedAdminPassword) {
       setIsAdmin(true);
       setIsAdminDialogOpen(false);
       setAdminPassword('');
+      
+      // Загружаем заявки из БД
+      try {
+        const response = await fetch('https://functions.poehali.dev/c7d95915-b55a-4c1f-a5ad-58bbb6f2cb28');
+        const data = await response.json();
+        if (data.registrations) {
+          setRegistrations(data.registrations);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки заявок:', error);
+      }
+      
       toast({
         title: "Вход выполнен",
         description: "Вы вошли в режим администратора"
@@ -2558,7 +2600,7 @@ export default function Index() {
         )}
 
         <Tabs defaultValue="calendar" className="animate-scale-in bg-slate-50">
-          <TabsList className={`grid w-full max-w-2xl mx-auto ${isAdmin ? 'grid-cols-5' : 'grid-cols-3'} mb-8`}>
+          <TabsList className={`grid w-full max-w-3xl mx-auto ${isAdmin ? 'grid-cols-6' : 'grid-cols-3'} mb-8`}>
             <TabsTrigger value="calendar" className="text-lg">
               <Icon name="CalendarDays" size={18} className="mr-2" />
               Календарь
@@ -2578,6 +2620,13 @@ export default function Index() {
                   Мероприятия
                   {pendingEvents.length > 0 && (
                     <Badge className="ml-2 bg-orange-500">{pendingEvents.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="registrations" className="text-lg relative">
+                  <Icon name="FileText" size={18} className="mr-2" />
+                  Заявки
+                  {registrations.length > 0 && (
+                    <Badge className="ml-2 bg-blue-500">{registrations.length}</Badge>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="users" className="text-lg relative">
@@ -3968,6 +4017,73 @@ export default function Index() {
                   </div>
                 </div>
               )}
+            </TabsContent>
+          )}
+          
+          {isAdmin && (
+            <TabsContent value="registrations">
+              <div className="grid gap-6">
+                {registrations.length === 0 ? (
+                  <Card className="col-span-full text-center py-12 border-2 border-dashed">
+                    <CardContent>
+                      <Icon name="FileText" size={48} className="mx-auto text-blue-500 mb-4" />
+                      <p className="text-lg text-muted-foreground">Нет заявок на мероприятия</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse bg-white rounded-lg shadow">
+                      <thead>
+                        <tr className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                          <th className="p-4 text-left">ID</th>
+                          <th className="p-4 text-left">ФИО</th>
+                          <th className="p-4 text-left">Телефон</th>
+                          <th className="p-4 text-left">Email</th>
+                          <th className="p-4 text-left">Мероприятие</th>
+                          <th className="p-4 text-left">Дата подачи</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {registrations.map((reg, index) => (
+                          <tr 
+                            key={reg.id} 
+                            className={`border-b hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}
+                          >
+                            <td className="p-4 font-semibold text-blue-600">#{reg.id}</td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-2">
+                                <Icon name="User" size={16} className="text-blue-600" />
+                                {reg.fullName}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-2">
+                                <Icon name="Phone" size={16} className="text-green-600" />
+                                {reg.phone}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-2">
+                                <Icon name="Mail" size={16} className="text-orange-600" />
+                                {reg.email}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-2">
+                                <Icon name="Calendar" size={16} className="text-purple-600" />
+                                {reg.eventName}
+                              </div>
+                            </td>
+                            <td className="p-4 text-muted-foreground text-sm">
+                              {new Date(reg.createdAt).toLocaleString('ru-RU')}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </TabsContent>
           )}
         </Tabs>
