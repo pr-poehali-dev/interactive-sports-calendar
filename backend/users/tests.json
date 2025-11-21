@@ -1,0 +1,29 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS request for CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Get all users",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "users": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Missing required fields",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "email": "test@test.com"
+      },
+      "expectedStatus": 400
+    }
+  ]
+}

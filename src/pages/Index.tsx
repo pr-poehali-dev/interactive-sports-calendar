@@ -402,10 +402,7 @@ export default function Index() {
     passportIssuedBy?: string;
     approved?: boolean;
     submittedAt?: string;
-  }>>(() => {
-    const savedUsers = localStorage.getItem('eventCalendarUsers');
-    return savedUsers ? JSON.parse(savedUsers) : [];
-  });
+  }>>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [customSport, setCustomSport] = useState('');
   const [showCustomSportInput, setShowCustomSportInput] = useState(false);
@@ -461,10 +458,6 @@ export default function Index() {
     });
     return stats;
   }, [pastEvents]);
-
-  useEffect(() => {
-    localStorage.setItem('eventCalendarUsers', JSON.stringify(users));
-  }, [users]);
 
   useEffect(() => {
     localStorage.setItem('adminEmail', adminEmail);
@@ -953,13 +946,24 @@ export default function Index() {
       
       // Загружаем заявки из БД
       try {
-        const response = await fetch('https://functions.poehali.dev/c7d95915-b55a-4c1f-a5ad-58bbb6f2cb28');
-        const data = await response.json();
-        if (data.registrations) {
-          setRegistrations(data.registrations);
+        const regResponse = await fetch('https://functions.poehali.dev/c7d95915-b55a-4c1f-a5ad-58bbb6f2cb28');
+        const regData = await regResponse.json();
+        if (regData.registrations) {
+          setRegistrations(regData.registrations);
         }
       } catch (error) {
         console.error('Ошибка загрузки заявок:', error);
+      }
+      
+      // Загружаем пользователей из БД
+      try {
+        const usersResponse = await fetch('https://functions.poehali.dev/9cd5f036-0bca-495b-9742-de598c37754f');
+        const usersData = await usersResponse.json();
+        if (usersData.users) {
+          setUsers(usersData.users);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки пользователей:', error);
       }
       
       toast({
@@ -983,7 +987,7 @@ export default function Index() {
     });
   };
   
-  const handleUserRegister = () => {
+  const handleUserRegister = async () => {
     if (!registerForm.email || !registerForm.password || !registerForm.name || !registerForm.phone) {
       toast({
         title: "Ошибка",
@@ -1020,34 +1024,44 @@ export default function Index() {
       return;
     }
     
-    if (users.find(u => u.email === registerForm.email)) {
-      toast({
-        title: "Ошибка",
-        description: "Пользователь с таким email уже существует",
-        variant: "destructive"
+    // Сохраняем пользователя в БД
+    try {
+      const response = await fetch('https://functions.poehali.dev/9cd5f036-0bca-495b-9742-de598c37754f', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registerForm)
       });
-      return;
-    }
-    
-    const newUser = {
-      email: registerForm.email,
-      password: registerForm.password,
-      name: registerForm.name,
-      phone: registerForm.phone,
-      userType: registerForm.userType,
-      inn: registerForm.inn,
-      companyName: registerForm.companyName,
-      legalAddress: registerForm.legalAddress,
-      birthDate: registerForm.birthDate,
-      passportSeries: registerForm.passportSeries,
-      passportNumber: registerForm.passportNumber,
-      passportIssueDate: registerForm.passportIssueDate,
-      passportIssuedBy: registerForm.passportIssuedBy,
-      approved: false,
-      submittedAt: new Date().toISOString()
-    };
-    
-    setUsers([...users, newUser]);
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        toast({
+          title: "Ошибка регистрации",
+          description: data.error || "Не удалось зарегистрироваться",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const newUser = {
+        email: registerForm.email,
+        password: registerForm.password,
+        name: registerForm.name,
+        phone: registerForm.phone,
+        userType: registerForm.userType,
+        inn: registerForm.inn,
+        companyName: registerForm.companyName,
+        legalAddress: registerForm.legalAddress,
+        birthDate: registerForm.birthDate,
+        passportSeries: registerForm.passportSeries,
+        passportNumber: registerForm.passportNumber,
+        passportIssueDate: registerForm.passportIssueDate,
+        passportIssuedBy: registerForm.passportIssuedBy,
+        approved: false,
+        submittedAt: new Date().toISOString()
+      };
+      
+      setUsers([...users, newUser]);
     
     const userTypeText = newUser.userType === 'individual' ? 'Физическое лицо' : 'Юридическое лицо';
     const adminEmailHtml = `
@@ -1199,6 +1213,17 @@ export default function Index() {
     const user = users.find(u => u.email === email);
     if (!user) return;
     
+    // Обновляем пользователя в БД
+    try {
+      await fetch('https://functions.poehali.dev/9cd5f036-0bca-495b-9742-de598c37754f', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, action: 'approve' })
+      });
+    } catch (error) {
+      console.error('Ошибка одобрения пользователя:', error);
+    }
+    
     setUsers(users.map(u => u.email === email ? {...u, approved: true} : u));
     
     const emailHtml = `
@@ -1276,6 +1301,17 @@ export default function Index() {
   const handleRejectUser = async (email: string) => {
     const user = users.find(u => u.email === email);
     if (!user) return;
+    
+    // Удаляем пользователя из БД
+    try {
+      await fetch('https://functions.poehali.dev/9cd5f036-0bca-495b-9742-de598c37754f', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, action: 'reject' })
+      });
+    } catch (error) {
+      console.error('Ошибка отклонения пользователя:', error);
+    }
     
     setUsers(users.filter(u => u.email !== email));
     
