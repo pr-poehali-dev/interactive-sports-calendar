@@ -337,30 +337,6 @@ export default function Index() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>(initialEvents);
-  
-  useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      navigate('/login');
-      return;
-    }
-    
-    try {
-      const user = JSON.parse(userStr);
-      if (!user.approved && user.user_type !== 'admin') {
-        toast({
-          variant: 'destructive',
-          title: 'Доступ запрещен',
-          description: 'Ваш аккаунт ожидает одобрения администратора',
-        });
-        localStorage.removeItem('user');
-        navigate('/login');
-      }
-    } catch (e) {
-      localStorage.removeItem('user');
-      navigate('/login');
-    }
-  }, [navigate, toast]);
   const [selectedSport, setSelectedSport] = useState<SportType>('all');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [registeredEvents, setRegisteredEvents] = useState<number[]>([]);
