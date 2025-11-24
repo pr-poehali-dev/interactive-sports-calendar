@@ -94,11 +94,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     try:
         print(f'Connecting to SMTP {smtp_host}:{smtp_port}')
-        server = smtplib.SMTP(smtp_host, smtp_port, timeout=15)
-        print('SMTP connection established')
         
-        server.starttls()
-        print('TLS started')
+        if smtp_port == 465:
+            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=15)
+            print('SMTP SSL connection established')
+        else:
+            server = smtplib.SMTP(smtp_host, smtp_port, timeout=15)
+            print('SMTP connection established')
+            server.starttls()
+            print('TLS started')
         
         server.login(smtp_user, smtp_password)
         print('SMTP login successful')
