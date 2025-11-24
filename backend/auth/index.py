@@ -242,10 +242,10 @@ def handle_list_users(event: Dict[str, Any]) -> Dict[str, Any]:
                 user_data['company_name'] = company_name
                 user_data['legal_address'] = legal_address
             else:
-                user_data['birth_date'] = birth_date
+                user_data['birth_date'] = birth_date.isoformat() if birth_date else None
                 user_data['passport_series'] = passport_series
                 user_data['passport_number'] = passport_number
-                user_data['passport_issue_date'] = passport_issue_date
+                user_data['passport_issue_date'] = passport_issue_date.isoformat() if passport_issue_date else None
                 user_data['passport_issued_by'] = passport_issued_by
             
             users.append(user_data)

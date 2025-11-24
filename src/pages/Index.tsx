@@ -330,8 +330,18 @@ interface User {
   email: string;
   name: string;
   phone: string;
+  password?: string;
+  userType?: string;
   approved?: boolean;
   submittedAt?: string;
+  birthDate?: string;
+  passportSeries?: string;
+  passportNumber?: string;
+  passportIssueDate?: string;
+  passportIssuedBy?: string;
+  inn?: string;
+  companyName?: string;
+  legalAddress?: string;
 }
 
 export default function Index() {
@@ -450,7 +460,15 @@ export default function Index() {
               password: '',
               userType: u.user_type,
               approved: u.approved,
-              submittedAt: u.submitted_at
+              submittedAt: u.submitted_at,
+              birthDate: u.birth_date,
+              passportSeries: u.passport_series,
+              passportNumber: u.passport_number,
+              passportIssueDate: u.passport_issue_date,
+              passportIssuedBy: u.passport_issued_by,
+              inn: u.inn,
+              companyName: u.company_name,
+              legalAddress: u.legal_address
             })));
           }
         })
@@ -486,6 +504,9 @@ export default function Index() {
 
   const approvedEvents = events.filter(event => event.approved);
   const pendingEvents = events.filter(event => !event.approved);
+  
+  const approvedUsers = useMemo(() => users.filter(user => user.approved), [users]);
+  const pendingUsers = useMemo(() => users.filter(user => !user.approved), [users]);
   
   const filteredEvents = approvedEvents.filter(event => {
     const matchesSport = selectedSport === 'all' ? true : event.sport === selectedSport;
