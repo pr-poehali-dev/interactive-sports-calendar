@@ -18,7 +18,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Max-Age': '86400'
             },
@@ -27,12 +27,17 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     if method == 'GET':
-        return handle_get_user(event)
+        if path == 'list':
+            return handle_list_users(event)
+        else:
+            return handle_get_user(event)
     elif method == 'POST':
         if path == 'register':
             return handle_register(event)
         else:
             return handle_login(event)
+    elif method == 'DELETE':
+        return handle_delete_user(event)
     else:
         return {
             'statusCode': 405,
@@ -173,6 +178,97 @@ def handle_login(event: Dict[str, Any]) -> Dict[str, Any]:
                     'approved': approved
                 }
             }),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        print(f'Database error: {str(e)}')
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Ошибка сервера: {str(e)}'}),
+            'isBase64Encoded': False
+        }
+
+def handle_list_users(event: Dict[str, Any]) -> Dict[str, Any]:
+    try:
+        import psycopg2
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+        cur = conn.cursor()
+        
+        cur.execute(
+            "SELECT id, email, name, phone, user_type, approved, submitted_at FROM users ORDER BY submitted_at DESC"
+        )
+        rows = cur.fetchall()
+        
+        users = []
+        for row in rows:
+            user_id, email, name, phone, user_type, approved, submitted_at = row
+            users.append({
+                'id': user_id,
+                'email': email,
+                'name': name,
+                'phone': phone,
+                'user_type': user_type,
+                'approved': approved,
+                'submitted_at': submitted_at.isoformat() if submitted_at else None
+            })
+        
+        cur.close()
+        conn.close()
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'users': users}),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        print(f'Database error: {str(e)}')
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Ошибка сервера: {str(e)}'}),
+            'isBase64Encoded': False
+        }
+
+def handle_delete_user(event: Dict[str, Any]) -> Dict[str, Any]:
+    params = event.get('queryStringParameters', {}) or {}
+    user_id = params.get('user_id')
+    
+    if not user_id:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'user_id обязателен'}),
+            'isBase64Encoded': False
+        }
+    
+    try:
+        import psycopg2
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+        cur = conn.cursor()
+        
+        cur.execute("DELETE FROM users WHERE id = %s RETURNING id", (user_id,))
+        deleted = cur.fetchone()
+        
+        if not deleted:
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Пользователь не найден'}),
+                'isBase64Encoded': False
+            }
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'success': True, 'message': 'Пользователь удален'}),
             'isBase64Encoded': False
         }
     except Exception as e:

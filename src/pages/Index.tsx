@@ -326,6 +326,7 @@ const sportNames: Record<SportType, string> = {
 };
 
 interface User {
+  id?: number;
   email: string;
   name: string;
   phone: string;
@@ -434,6 +435,28 @@ export default function Index() {
     participants: 0,
     status: 'upcoming'
   });
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list')
+        .then(res => res.json())
+        .then(data => {
+          if (data.users) {
+            setUsers(data.users.map((u: any) => ({
+              id: u.id,
+              email: u.email,
+              name: u.name,
+              phone: u.phone || '',
+              password: '',
+              userType: u.user_type,
+              approved: u.approved,
+              submittedAt: u.submitted_at
+            })));
+          }
+        })
+        .catch(err => console.error('Failed to load users:', err));
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     const today = new Date();
@@ -1483,20 +1506,20 @@ export default function Index() {
   
   const handleAdminDeleteUser = async (email: string) => {
     const user = users.find(u => u.email === email);
-    if (!user) return;
+    if (!user || !user.id) return;
     
     try {
-      const response = await fetch('https://functions.poehali.dev/9cd5f036-0bca-495b-9742-de598c37754f', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=delete&user_id=${user.id}`, {
+        method: 'DELETE'
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to delete user');
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to delete user');
       }
       
-      setUsers(users.filter(u => u.email !== email));
+      setUsers(users.filter(u => u.id !== user.id));
       
       toast({
         title: "Пользователь удалён",
