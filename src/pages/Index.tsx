@@ -389,6 +389,9 @@ export default function Index() {
   const [isDeleteAllEventsDialogOpen, setIsDeleteAllEventsDialogOpen] = useState(false);
   const [deleteAllEventsPassword, setDeleteAllEventsPassword] = useState('');
   const [isDeletingAllEvents, setIsDeletingAllEvents] = useState(false);
+  const [deletePeriodType, setDeletePeriodType] = useState<'all' | 'year' | 'month'>('all');
+  const [deleteYear, setDeleteYear] = useState<string>(new Date().getFullYear().toString());
+  const [deleteMonth, setDeleteMonth] = useState<string>('');
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ 
     email: '', 
@@ -1846,6 +1849,30 @@ export default function Index() {
     setIsAddDialogOpen(true);
   };
 
+  const getEventsToDelete = () => {
+    if (deletePeriodType === 'all') {
+      return events;
+    }
+    
+    if (deletePeriodType === 'year') {
+      return events.filter(e => {
+        const eventYear = new Date(e.date).getFullYear().toString();
+        return eventYear === deleteYear;
+      });
+    }
+    
+    if (deletePeriodType === 'month') {
+      if (!deleteMonth) return [];
+      return events.filter(e => {
+        const eventDate = new Date(e.date);
+        const eventYearMonth = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
+        return eventYearMonth === deleteMonth;
+      });
+    }
+    
+    return [];
+  };
+
   const handleDeleteAllEvents = async () => {
     if (deleteAllEventsPassword !== storedAdminPassword) {
       toast({
@@ -1856,14 +1883,25 @@ export default function Index() {
       return;
     }
     
+    const eventsToDelete = getEventsToDelete();
+    
+    if (eventsToDelete.length === 0) {
+      toast({
+        title: "Нет мероприятий",
+        description: "В выбранном периоде нет мероприятий для удаления",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsDeletingAllEvents(true);
     
     try {
-      const allEventIds = events.map(e => e.id);
+      const eventIdsToDelete = eventsToDelete.map(e => e.id);
       let successCount = 0;
       let failCount = 0;
       
-      for (const eventId of allEventIds) {
+      for (const eventId of eventIdsToDelete) {
         try {
           const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=delete&event_id=${eventId}`, {
             method: 'DELETE'
@@ -1883,11 +1921,13 @@ export default function Index() {
       setIsDeletingAllEvents(false);
       setIsDeleteAllEventsDialogOpen(false);
       setDeleteAllEventsPassword('');
+      setDeletePeriodType('all');
+      setDeleteMonth('');
       
       if (successCount > 0) {
         toast({
           title: "Мероприятия удалены",
-          description: `Удалено: ${successCount} из ${allEventIds.length}${failCount > 0 ? `. Ошибок: ${failCount}` : ''}`
+          description: `Удалено: ${successCount} из ${eventIdsToDelete.length}${failCount > 0 ? `. Ошибок: ${failCount}` : ''}`
         });
       } else {
         toast({
@@ -5412,26 +5452,86 @@ export default function Index() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <Icon name="AlertTriangle" size={24} />
-              Удаление всех мероприятий
+              Удаление мероприятий
             </DialogTitle>
             <DialogDescription>
-              Вы уверены, что хотите удалить ВСЕ мероприятия из системы? Это действие необратимо.
+              Выберите период для удаления мероприятий. Это действие необратимо.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
+            <div className="grid gap-2">
+              <Label>Выберите период удаления</Label>
+              <Select value={deletePeriodType} onValueChange={(value: 'all' | 'year' | 'month') => {
+                setDeletePeriodType(value);
+                if (value === 'month' && !deleteMonth) {
+                  const now = new Date();
+                  setDeleteMonth(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+                }
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите период" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все мероприятия</SelectItem>
+                  <SelectItem value="year">За конкретный год</SelectItem>
+                  <SelectItem value="month">За конкретный месяц</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {deletePeriodType === 'year' && (
+              <div className="grid gap-2">
+                <Label htmlFor="delete-year">Выберите год</Label>
+                <Select value={deleteYear} onValueChange={setDeleteYear}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Год" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 10 }, (_, i) => {
+                      const year = new Date().getFullYear() - 5 + i;
+                      return <SelectItem key={year} value={year.toString()}>{year}</SelectItem>;
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {deletePeriodType === 'month' && (
+              <div className="grid gap-2">
+                <Label htmlFor="delete-month">Выберите месяц</Label>
+                <Input
+                  id="delete-month"
+                  type="month"
+                  value={deleteMonth}
+                  onChange={(e) => setDeleteMonth(e.target.value)}
+                  disabled={isDeletingAllEvents}
+                />
+              </div>
+            )}
+            
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-900 font-semibold mb-2">
                 ВНИМАНИЕ! Будут удалены:
               </p>
-              <ul className="list-disc ml-5 text-sm text-red-800 space-y-1">
-                <li>Все одобренные мероприятия: {approvedEvents.length} шт.</li>
-                <li>Все заявки на модерации: {pendingEvents.length} шт.</li>
-                <li>Документы и медиафайлы</li>
-                <li>История и результаты</li>
-              </ul>
-              <p className="text-sm text-red-900 font-semibold mt-3">
-                Итого к удалению: {events.length} мероприятий
-              </p>
+              {(() => {
+                const eventsToDelete = getEventsToDelete();
+                const approvedToDelete = eventsToDelete.filter(e => e.approved).length;
+                const pendingToDelete = eventsToDelete.filter(e => !e.approved).length;
+                
+                return (
+                  <>
+                    <ul className="list-disc ml-5 text-sm text-red-800 space-y-1">
+                      <li>Одобренные мероприятия: {approvedToDelete} шт.</li>
+                      <li>Заявки на модерации: {pendingToDelete} шт.</li>
+                      <li>Документы и медиафайлы</li>
+                      <li>История и результаты</li>
+                    </ul>
+                    <p className="text-sm text-red-900 font-semibold mt-3">
+                      Итого к удалению: {eventsToDelete.length} мероприятий
+                    </p>
+                  </>
+                );
+              })()}
             </div>
             
             <div className="grid gap-2">
@@ -5446,7 +5546,7 @@ export default function Index() {
                 placeholder="Пароль администратора"
                 disabled={isDeletingAllEvents}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !isDeletingAllEvents) {
+                  if (e.key === 'Enter' && !isDeletingAllEvents && getEventsToDelete().length > 0) {
                     handleDeleteAllEvents();
                   }
                 }}
@@ -5459,6 +5559,8 @@ export default function Index() {
               onClick={() => {
                 setIsDeleteAllEventsDialogOpen(false);
                 setDeleteAllEventsPassword('');
+                setDeletePeriodType('all');
+                setDeleteMonth('');
               }}
               disabled={isDeletingAllEvents}
             >
@@ -5467,7 +5569,7 @@ export default function Index() {
             <Button 
               variant="destructive" 
               onClick={handleDeleteAllEvents}
-              disabled={isDeletingAllEvents || !deleteAllEventsPassword}
+              disabled={isDeletingAllEvents || !deleteAllEventsPassword || getEventsToDelete().length === 0}
             >
               {isDeletingAllEvents ? (
                 <>
