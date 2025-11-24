@@ -483,6 +483,47 @@ export default function Index() {
   }, [isAdmin]);
 
   useEffect(() => {
+    const loadEvents = () => {
+      fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events')
+        .then(res => res.json())
+        .then(data => {
+          if (data.events) {
+            const mappedEvents = data.events.map((e: any) => ({
+              id: e.id,
+              eventNumber: e.event_number,
+              title: e.title,
+              date: e.date,
+              time: e.time,
+              location: e.location,
+              eventType: e.event_type,
+              eventLevel: e.event_level,
+              sport: e.sport,
+              participants: e.participants,
+              maxParticipants: e.max_participants,
+              maxSpectators: e.max_spectators,
+              status: e.status,
+              description: e.description,
+              organizer: e.organizer,
+              result: e.result,
+              approved: e.approved,
+              submittedAt: e.submitted_at,
+              submittedBy: e.submitted_by,
+              documents: e.documents || [],
+              media: e.media || [],
+              requiredDocuments: e.required_documents || []
+            }));
+            setEvents(mappedEvents);
+          }
+        })
+        .catch(err => console.error('Failed to load events:', err));
+    };
+
+    loadEvents();
+    const interval = setInterval(loadEvents, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -598,129 +639,68 @@ export default function Index() {
       ? `${newEvent.title} (${customSport})`
       : newEvent.title;
     
-    const eventToAdd: Event = {
-      id: newId,
-      eventNumber: finalEventNumber,
+    const eventData = {
+      event_number: finalEventNumber,
       title: finalTitle,
       date: newEvent.date,
       time: newEvent.time,
       location: newEvent.location,
-      eventType: eventType,
-      eventLevel: newEvent.eventLevel,
+      event_type: eventType,
+      event_level: newEvent.eventLevel,
       sport: (showCustomSportInput ? 'all' : newEvent.sport) as SportType,
       description: newEvent.description || '',
       organizer: newEvent.organizer,
-      maxParticipants: newEvent.maxParticipants || 50,
-      maxSpectators: newEvent.maxSpectators,
+      max_participants: newEvent.maxParticipants || 50,
+      max_spectators: newEvent.maxSpectators,
       participants: 0,
       status: 'upcoming',
       approved: isAdmin,
-      submittedAt: new Date().toISOString(),
-      submittedBy: currentUser?.email
+      submitted_by: currentUser?.email
     };
     
-    setEvents([...events, eventToAdd]);
-    setIsAddDialogOpen(false);
-    
-    if (isAdmin) {
-      toast({
-        title: "Мероприятие добавлено",
-        description: `"${eventToAdd.title}" успешно добавлено в календарь`
-      });
-    } else {
-      // Сохраняем заявку в базу данных (основной метод)
-      fetch('https://functions.poehali.dev/c7d95915-b55a-4c1f-a5ad-58bbb6f2cb28', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: currentUser?.name || 'Неизвестный',
-          phone: currentUser?.phone || 'Не указан',
-          email: currentUser?.email || 'Не указан',
-          eventName: `${eventToAdd.title} (${new Date(eventToAdd.date).toLocaleDateString('ru-RU')})`
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          console.log('Заявка сохранена в БД:', data.id);
+    fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(eventData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        setIsAddDialogOpen(false);
+        
+        if (isAdmin) {
+          toast({
+            title: "Мероприятие добавлено",
+            description: `"${eventData.title}" успешно добавлено в календарь`
+          });
+        } else {
+          // Дублируем в заявки для совместимости
+          fetch('https://functions.poehali.dev/c7d95915-b55a-4c1f-a5ad-58bbb6f2cb28', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fullName: currentUser?.name || 'Неизвестный',
+              phone: currentUser?.phone || 'Не указан',
+              email: currentUser?.email || 'Не указан',
+              eventName: `${eventData.title} (${new Date(eventData.date).toLocaleDateString('ru-RU')})`
+            })
+          }).catch(() => {});
+          
+          toast({
+            title: "Заявка отправлена",
+            description: `"${eventData.title}" сохранена и отправлена на модерацию`
+          });
         }
-      })
-      .catch(error => {
-        console.error('Ошибка сохранения в БД:', error);
-      });
-      
-      // Email как дополнительный канал уведомлений
-      const eventEmailHtml = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-              .info-block { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #667eea; }
-              .info-row { margin: 8px 0; }
-              .label { font-weight: bold; color: #667eea; }
-              .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <h1>📅 Новая заявка на мероприятие</h1>
-              </div>
-              <div class="content">
-                <p>Поступила новая заявка на добавление мероприятия в календарный план.</p>
-                
-                <div class="info-block">
-                  <h3 style="margin-top: 0; color: #667eea;">${eventToAdd.title}</h3>
-                  ${eventToAdd.eventNumber ? `<div class="info-row"><span class="label">Номер:</span> ${eventToAdd.eventNumber}</div>` : ''}
-                  <div class="info-row"><span class="label">Дата:</span> ${new Date(eventToAdd.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })} в ${eventToAdd.time}</div>
-                  <div class="info-row"><span class="label">Место проведения:</span> ${eventToAdd.location}</div>
-                  <div class="info-row"><span class="label">Организатор:</span> ${eventToAdd.organizer}</div>
-                  <div class="info-row"><span class="label">Статус:</span> ${eventLevelNames[eventToAdd.eventLevel]}</div>
-                  <div class="info-row"><span class="label">Вид спорта:</span> ${sportNames[eventToAdd.sport]}</div>
-                  <div class="info-row"><span class="label">Макс. участников:</span> ${eventToAdd.maxParticipants}</div>
-                  ${eventToAdd.maxSpectators ? `<div class="info-row"><span class="label">Макс. зрителей:</span> ${eventToAdd.maxSpectators}</div>` : ''}
-                  ${currentUser ? `<div class="info-row"><span class="label">Подал заявку:</span> ${currentUser.name} (${currentUser.email})</div>` : ''}
-                </div>
-                
-                ${eventToAdd.description ? `
-                  <div class="info-block">
-                    <h3 style="margin-top: 0; color: #667eea;">Описание</h3>
-                    <p>${eventToAdd.description}</p>
-                  </div>
-                ` : ''}
-                
-                <p style="margin-top: 30px;">Пожалуйста, проверьте заявку и одобрите или отклоните её в панели администратора.</p>
-              </div>
-              <div class="footer">
-                <p>Это автоматическое уведомление из системы "Единый календарный план м.о. Истра"</p>
-              </div>
-            </div>
-          </body>
-        </html>
-      `;
-      
-      fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: adminEmail,
-          subject: '📅 Новая заявка на мероприятие - Единый календарный план',
-          html: eventEmailHtml
-        })
-      }).catch(() => {
-        console.log('Email notification failed (non-critical)');
-      });
-      
+      }
+    })
+    .catch(error => {
+      console.error('Ошибка сохранения мероприятия:', error);
       toast({
-        title: "Заявка отправлена",
-        description: `"${eventToAdd.title}" сохранена и отправлена на модерацию`
+        title: "Ошибка",
+        description: "Не удалось сохранить мероприятие",
+        variant: "destructive"
       });
-    }
+    });
     
     setNewEvent({
       title: '',
@@ -746,11 +726,22 @@ export default function Index() {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
     
-    const requiredDocs = createDefaultRequiredDocuments();
-    
-    setEvents(events.map(e => 
-      e.id === eventId ? { ...e, approved: true, requiredDocuments: requiredDocs } : e
-    ));
+    try {
+      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=approve&event_id=${eventId}`, {
+        method: 'PUT'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to approve event');
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось одобрить мероприятие",
+        variant: "destructive"
+      });
+      return;
+    }
     
     const emailHtml = `
       <html>
@@ -848,7 +839,13 @@ export default function Index() {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
     
-    setEvents(events.filter(e => e.id !== eventId));
+    try {
+      await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=delete&event_id=${eventId}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      console.error('Error deleting event:', error);
+    }
     
     const emailHtml = `
       <html>
@@ -949,7 +946,7 @@ export default function Index() {
     setIsEditDialogOpen(true);
   };
   
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingEvent) return;
     
     if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.organizer || !newEvent.eventLevel) {
@@ -972,47 +969,65 @@ export default function Index() {
       finalEventNumber = manualEventNumber.trim();
     }
     
-    const updatedEvent: Event = {
-      ...editingEvent,
+    const updateData = {
+      event_number: finalEventNumber,
       title: newEvent.title,
       date: newEvent.date,
       time: newEvent.time,
       location: newEvent.location,
-      eventType: eventType,
-      eventLevel: newEvent.eventLevel,
-      sport: newEvent.sport as SportType,
+      event_type: eventType,
+      event_level: newEvent.eventLevel,
+      sport: newEvent.sport,
       description: newEvent.description || '',
       organizer: newEvent.organizer,
-      maxParticipants: newEvent.maxParticipants || 50,
-      maxSpectators: newEvent.maxSpectators,
-      eventNumber: finalEventNumber
+      max_participants: newEvent.maxParticipants || 50,
+      max_spectators: newEvent.maxSpectators,
+      status: newEvent.status,
+      participants: editingEvent.participants
     };
     
-    setEvents(events.map(e => e.id === editingEvent.id ? updatedEvent : e));
-    setIsEditDialogOpen(false);
-    setEditingEvent(null);
-    
-    setNewEvent({
-      title: '',
-      date: '',
-      time: '',
-      location: '',
-      sport: 'running',
-      eventLevel: 'municipal',
-      description: '',
-      organizer: '',
-      maxParticipants: 50,
-      maxSpectators: undefined,
-      participants: 0,
-      status: 'upcoming'
-    });
-    setManualEventNumber('');
-    setShowManualEventNumber(false);
-    
-    toast({
-      title: "Изменения сохранены",
-      description: `Мероприятие "${updatedEvent.title}" обновлено`
-    });
+    try {
+      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=update&event_id=${editingEvent.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update event');
+      }
+      
+      setIsEditDialogOpen(false);
+      setEditingEvent(null);
+      
+      setNewEvent({
+        title: '',
+        date: '',
+        time: '',
+        location: '',
+        sport: 'running',
+        eventLevel: 'municipal',
+        description: '',
+        organizer: '',
+        maxParticipants: 50,
+        maxSpectators: undefined,
+        participants: 0,
+        status: 'upcoming'
+      });
+      setManualEventNumber('');
+      setShowManualEventNumber(false);
+      
+      toast({
+        title: "Изменения сохранены",
+        description: `Мероприятие "${updateData.title}" обновлено`
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить мероприятие",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleAdminLogin = async () => {
@@ -1530,19 +1545,30 @@ export default function Index() {
     });
   };
   
-  const handleToggleEventStatus = (eventId: number) => {
+  const handleToggleEventStatus = async (eventId: number) => {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
     
     const newStatus = event.status === 'upcoming' ? 'past' : 'upcoming';
-    setEvents(events.map(e => 
-      e.id === eventId ? { ...e, status: newStatus } : e
-    ));
     
-    toast({
-      title: "Статус изменен",
-      description: `Мероприятие перемещено в раздел "${newStatus === 'upcoming' ? 'Предстоящие' : 'Прошедшие'}"`
-    });
+    try {
+      await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=update&event_id=${eventId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...event, status: newStatus })
+      });
+      
+      toast({
+        title: "Статус изменен",
+        description: `Мероприятие перемещено в раздел "${newStatus === 'upcoming' ? 'Предстоящие' : 'Прошедшие'}"`
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось изменить статус",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleDeleteCurrentUserAccount = async () => {
