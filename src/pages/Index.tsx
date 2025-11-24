@@ -1316,20 +1316,28 @@ export default function Index() {
   
   const handleApproveUser = async (email: string) => {
     const user = users.find(u => u.email === email);
-    if (!user) return;
+    if (!user || !user.id) return;
     
-    // Обновляем пользователя в БД
     try {
-      await fetch('https://functions.poehali.dev/9cd5f036-0bca-495b-9742-de598c37754f', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, action: 'approve' })
+      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=approve&user_id=${user.id}`, {
+        method: 'PUT'
       });
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to approve user');
+      }
+      
+      setUsers(users.map(u => u.id === user.id ? {...u, approved: true} : u));
     } catch (error) {
-      console.error('Ошибка одобрения пользователя:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось одобрить пользователя",
+        variant: "destructive"
+      });
+      return;
     }
-    
-    setUsers(users.map(u => u.email === email ? {...u, approved: true} : u));
     
     const emailHtml = `
       <!DOCTYPE html>
@@ -1410,20 +1418,28 @@ export default function Index() {
   
   const handleRejectUser = async (email: string) => {
     const user = users.find(u => u.email === email);
-    if (!user) return;
+    if (!user || !user.id) return;
     
-    // Удаляем пользователя из БД
     try {
-      await fetch('https://functions.poehali.dev/9cd5f036-0bca-495b-9742-de598c37754f', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, action: 'reject' })
+      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=delete&user_id=${user.id}`, {
+        method: 'DELETE'
       });
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to delete user');
+      }
+      
+      setUsers(users.filter(u => u.id !== user.id));
     } catch (error) {
-      console.error('Ошибка отклонения пользователя:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить пользователя",
+        variant: "destructive"
+      });
+      return;
     }
-    
-    setUsers(users.filter(u => u.email !== email));
     
     const emailHtml = `
       <!DOCTYPE html>

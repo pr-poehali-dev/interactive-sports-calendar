@@ -18,7 +18,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Max-Age': '86400'
             },
@@ -36,6 +36,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             return handle_register(event)
         else:
             return handle_login(event)
+    elif method == 'PUT':
+        if path == 'approve':
+            return handle_approve_user(event)
+        else:
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Invalid action'}),
+                'isBase64Encoded': False
+            }
     elif method == 'DELETE':
         return handle_delete_user(event)
     else:
@@ -314,6 +324,61 @@ def handle_delete_user(event: Dict[str, Any]) -> Dict[str, Any]:
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
             'body': json.dumps({'error': f'Ошибка сервера: {str(e)}'}),
+            'isBase64Encoded': False
+        }
+
+def handle_approve_user(event: Dict[str, Any]) -> Dict[str, Any]:
+    params = event.get('queryStringParameters', {}) or {}
+    user_id = params.get('user_id')
+    
+    if not user_id:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'user_id обязателен'}),
+            'isBase64Encoded': False
+        }
+    
+    try:
+        import psycopg2
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+        cur = conn.cursor()
+        
+        cur.execute("UPDATE users SET approved = true WHERE id = %s RETURNING id, email, name", (user_id,))
+        updated = cur.fetchone()
+        
+        if not updated:
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Пользователь не найден'}),
+                'isBase64Encoded': False
+            }
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        user_id_result, email, name = updated
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({
+                'success': True,
+                'message': 'Пользователь одобрен',
+                'user': {'id': user_id_result, 'email': email, 'name': name}
+            }),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        print(f'Database error: {str(e)}')
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Ошибка сервера одобрения: {str(e)}'}),
             'isBase64Encoded': False
         }
 
