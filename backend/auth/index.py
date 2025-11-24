@@ -5,13 +5,15 @@ from typing import Dict, Any
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Аутентификация пользователей (регистрация и вход)
+    Business: Управление пользователями и мероприятиями
     Args: event с httpMethod, body, queryStringParameters
           context с request_id
     Returns: HTTP response с результатом операции
     '''
     method: str = event.get('httpMethod', 'POST')
-    path: str = event.get('queryStringParameters', {}).get('action', 'login') if event.get('queryStringParameters') else 'login'
+    params = event.get('queryStringParameters') or {}
+    path: str = params.get('action', 'login')
+    resource: str = params.get('resource', 'users')
     
     if method == 'OPTIONS':
         return {
@@ -25,6 +27,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': '',
             'isBase64Encoded': False
         }
+    
+    if resource == 'events':
+        if method == 'GET' and path == 'list':
+            return handle_list_events(event)
+        elif method == 'POST':
+            return handle_create_event(event)
+        elif method == 'PUT':
+            if path == 'approve':
+                return handle_approve_event(event)
+            elif path == 'update':
+                return handle_update_event(event)
+        elif method == 'DELETE':
+            return handle_delete_event(event)
     
     if method == 'GET':
         if path == 'list':
