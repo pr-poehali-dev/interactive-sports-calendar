@@ -1264,7 +1264,7 @@ export default function Index() {
     }
   };
   
-  const handleUserLogin = () => {
+  const handleUserLogin = async () => {
     if (!loginForm.email || !loginForm.password) {
       toast({
         title: "Ошибка",
@@ -1274,35 +1274,51 @@ export default function Index() {
       return;
     }
     
-    const user = users.find(u => u.email === loginForm.email && u.password === loginForm.password);
-    
-    if (!user) {
+    try {
+      console.log('Attempting login for:', loginForm.email);
+      
+      const response = await fetch('https://functions.poehali.dev/25a9ecf9-110a-4838-b707-39c64fa07f05', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: loginForm.email,
+          password: loginForm.password
+        })
+      });
+      
+      console.log('Login response status:', response.status);
+      const data = await response.json();
+      console.log('Login response data:', data);
+      
+      if (!response.ok || !data.success) {
+        toast({
+          title: "Ошибка входа",
+          description: data.error || "Неверный email или пароль",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const user = data.user;
+      setCurrentUser({ email: user.email, name: user.name, phone: user.phone });
+      setIsLoggedIn(true);
+      setIsLoginDialogOpen(false);
+      setLoginForm({ email: '', password: '' });
+      
       toast({
-        title: "Ошибка входа",
-        description: "Неверный email или пароль",
+        title: "Вход выполнен",
+        description: `Добро пожаловать, ${user.name}!`
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось выполнить вход. Попробуйте позже.",
         variant: "destructive"
       });
-      return;
     }
-    
-    if (!user.approved) {
-      toast({
-        title: "Доступ запрещен",
-        description: "Ваша регистрация ожидает одобрения администратором",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setCurrentUser({ email: user.email, name: user.name, phone: user.phone });
-    setIsLoggedIn(true);
-    setIsLoginDialogOpen(false);
-    setLoginForm({ email: '', password: '' });
-    
-    toast({
-      title: "Вход выполнен",
-      description: `Добро пожаловать, ${user.name}!`
-    });
   };
   
   const handleUserLogout = () => {

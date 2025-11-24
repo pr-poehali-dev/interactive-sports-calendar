@@ -52,11 +52,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
         cur = conn.cursor()
         
-        cur.execute(
-            "SELECT id, email, name, phone, user_type, approved FROM users WHERE email = %s AND password = %s",
-            (email, password_hash)
-        )
+        email_escaped = email.replace("'", "''")
+        password_hash_escaped = password_hash.replace("'", "''")
+        
+        query = f"SELECT id, email, name, phone, user_type, approved FROM users WHERE email = '{email_escaped}' AND password = '{password_hash_escaped}'"
+        print(f'Executing query: {query}')
+        
+        cur.execute(query)
         user = cur.fetchone()
+        
+        print(f'Query result: {user}')
         
         cur.close()
         conn.close()
