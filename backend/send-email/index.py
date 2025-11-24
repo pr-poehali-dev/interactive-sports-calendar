@@ -41,7 +41,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     subject = body_data.get('subject')
     html_content = body_data.get('html')
     
+    print(f'Получен запрос на отправку email: to={to_email}, subject={subject}')
+    
     if not to_email or not subject or not html_content:
+        print('Ошибка: отсутствуют обязательные поля')
         return {
             'statusCode': 400,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
@@ -56,7 +59,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     smtp_from_email = os.environ.get('SMTP_FROM_EMAIL', smtp_user)
     smtp_from_name = os.environ.get('SMTP_FROM_NAME', 'Единый календарный план м.о. Истра')
     
+    print(f'SMTP config: host={smtp_host}, port={smtp_port}, user={smtp_user}, from={smtp_from_email}')
+    
     if not all([smtp_host, smtp_user, smtp_password]):
+        print('Ошибка: SMTP credentials не настроены')
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},

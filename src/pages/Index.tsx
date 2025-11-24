@@ -803,28 +803,35 @@ export default function Index() {
     `;
     
     if (event.submittedBy) {
+      console.log('Отправка email организатору:', event.submittedBy);
       try {
+        const emailPayload = {
+          to: event.submittedBy,
+          subject: `Мероприятие "${event.title}" одобрено - Единый календарный план Истра`,
+          html: emailHtml
+        };
+        console.log('Email payload:', emailPayload);
+        
         const response = await fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: event.submittedBy,
-            subject: `Мероприятие "${event.title}" одобрено - Единый календарный план Истра`,
-            html: emailHtml
-          })
+          body: JSON.stringify(emailPayload)
         });
+        
+        console.log('Email response status:', response.status);
+        const responseData = await response.json();
+        console.log('Email response data:', responseData);
         
         if (response.ok) {
           toast({
             title: "Мероприятие одобрено ✅",
-            description: `"${event.title}" добавлено. Email отправлен организатору.`
+            description: `"${event.title}" добавлено. Email отправлен на ${event.submittedBy}`
           });
         } else {
-          const errorData = await response.json();
-          console.error('Email error:', errorData);
+          console.error('Email error:', responseData);
           toast({
             title: "Мероприятие одобрено ✅",
-            description: `"${event.title}" добавлено. Email не отправлен ⚠️`,
+            description: `"${event.title}" добавлено. Email не отправлен: ${responseData.error || 'неизвестная ошибка'}`,
             variant: "destructive"
           });
         }
@@ -832,11 +839,12 @@ export default function Index() {
         console.error('Email send error:', error);
         toast({
           title: "Мероприятие одобрено ✅",
-          description: `"${event.title}" добавлено. Email не отправлен ⚠️`,
+          description: `"${event.title}" добавлено. Ошибка отправки email: ${error}`,
           variant: "destructive"
         });
       }
     } else {
+      console.log('У мероприятия нет submittedBy, email не отправляется');
       toast({
         title: "Мероприятие одобрено",
         description: `"${event.title}" добавлено в календарь`
@@ -1422,16 +1430,24 @@ export default function Index() {
       </html>
     `;
     
+    console.log('Отправка email пользователю:', email);
     try {
+      const emailPayload = {
+        to: email,
+        subject: 'Регистрация одобрена - Единый календарный план Истра',
+        html: emailHtml
+      };
+      console.log('Email payload:', emailPayload);
+      
       const response = await fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: email,
-          subject: 'Регистрация одобрена - Единый календарный план Истра',
-          html: emailHtml
-        })
+        body: JSON.stringify(emailPayload)
       });
+      
+      console.log('Email response status:', response.status);
+      const responseData = await response.json();
+      console.log('Email response data:', responseData);
       
       if (response.ok) {
         toast({
@@ -1439,11 +1455,10 @@ export default function Index() {
           description: `Email отправлен на ${email}`
         });
       } else {
-        const errorData = await response.json();
-        console.error('Email error:', errorData);
+        console.error('Email error:', responseData);
         toast({
           title: "Пользователь одобрен ✅",
-          description: "Email не отправлен ⚠️ Проверьте SMTP настройки",
+          description: `Email не отправлен: ${responseData.error || 'Проверьте SMTP настройки'}`,
           variant: "destructive"
         });
       }
@@ -1451,7 +1466,7 @@ export default function Index() {
       console.error('Email send error:', error);
       toast({
         title: "Пользователь одобрен ✅",
-        description: "Email не отправлен ⚠️ Проверьте SMTP настройки",
+        description: `Ошибка отправки email: ${error}`,
         variant: "destructive"
       });
     }
