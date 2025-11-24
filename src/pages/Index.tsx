@@ -437,7 +437,7 @@ export default function Index() {
   });
 
   useEffect(() => {
-    if (isAdmin) {
+    const loadUsers = () => {
       fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list')
         .then(res => res.json())
         .then(data => {
@@ -455,6 +455,12 @@ export default function Index() {
           }
         })
         .catch(err => console.error('Failed to load users:', err));
+    };
+
+    if (isAdmin) {
+      loadUsers();
+      const interval = setInterval(loadUsers, 30000);
+      return () => clearInterval(interval);
     }
   }, [isAdmin]);
 
@@ -1083,12 +1089,25 @@ export default function Index() {
       return;
     }
     
-    // Сохраняем пользователя в БД
     try {
-      const response = await fetch('https://functions.poehali.dev/9cd5f036-0bca-495b-9742-de598c37754f', {
+      const response = await fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registerForm)
+        body: JSON.stringify({
+          email: registerForm.email,
+          password: registerForm.password,
+          name: registerForm.name,
+          phone: registerForm.phone,
+          user_type: registerForm.userType,
+          inn: registerForm.inn,
+          company_name: registerForm.companyName,
+          legal_address: registerForm.legalAddress,
+          birth_date: registerForm.birthDate,
+          passport_series: registerForm.passportSeries,
+          passport_number: registerForm.passportNumber,
+          passport_issue_date: registerForm.passportIssueDate,
+          passport_issued_by: registerForm.passportIssuedBy
+        })
       });
       
       const data = await response.json();
@@ -1103,8 +1122,9 @@ export default function Index() {
       }
       
       const newUser = {
+        id: data.user_id,
         email: registerForm.email,
-        password: registerForm.password,
+        password: '',
         name: registerForm.name,
         phone: registerForm.phone,
         userType: registerForm.userType,
@@ -1119,8 +1139,6 @@ export default function Index() {
         approved: false,
         submittedAt: new Date().toISOString()
       };
-      
-      setUsers([...users, newUser]);
       
       const userTypeText = newUser.userType === 'individual' ? 'Физическое лицо' : 'Юридическое лицо';
       const adminEmailHtml = `

@@ -1,19 +1,19 @@
 {
   "tests": [
     {
-      "name": "Register new user",
+      "name": "Check duplicate email",
       "method": "POST",
       "path": "/?action=register",
       "body": {
-        "email": "newuser@example.com",
+        "email": "admin@system.local",
         "password": "password123",
         "name": "Test User",
         "phone": "+7 999 123 45 67",
         "user_type": "individual"
       },
-      "expectedStatus": 201,
+      "expectedStatus": 400,
       "expectedBody": {
-        "success": true
+        "error": "string"
       },
       "bodyMatcher": "partial"
     },

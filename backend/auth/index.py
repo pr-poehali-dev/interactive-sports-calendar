@@ -54,6 +54,16 @@ def handle_register(event: Dict[str, Any]) -> Dict[str, Any]:
     phone = body_data.get('phone', '').strip()
     user_type = body_data.get('user_type', 'individual')
     
+    inn = body_data.get('inn', '').strip() if user_type == 'legal' else None
+    company_name = body_data.get('company_name', '').strip() if user_type == 'legal' else None
+    legal_address = body_data.get('legal_address', '').strip() if user_type == 'legal' else None
+    
+    birth_date = body_data.get('birth_date', '').strip() if user_type == 'individual' else None
+    passport_series = body_data.get('passport_series', '').strip() if user_type == 'individual' else None
+    passport_number = body_data.get('passport_number', '').strip() if user_type == 'individual' else None
+    passport_issue_date = body_data.get('passport_issue_date', '').strip() if user_type == 'individual' else None
+    passport_issued_by = body_data.get('passport_issued_by', '').strip() if user_type == 'individual' else None
+    
     if not email or not password or not name:
         return {
             'statusCode': 400,
@@ -91,8 +101,16 @@ def handle_register(event: Dict[str, Any]) -> Dict[str, Any]:
             }
         
         cur.execute(
-            "INSERT INTO users (email, password, name, phone, user_type, approved, submitted_at) VALUES (%s, %s, %s, %s, %s, %s, NOW()) RETURNING id",
-            (email, password_hash, name, phone, user_type, False)
+            """INSERT INTO users (
+                email, password, name, phone, user_type, 
+                inn, company_name, legal_address,
+                birth_date, passport_series, passport_number, passport_issue_date, passport_issued_by,
+                approved, submitted_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW()) RETURNING id""",
+            (email, password_hash, name, phone, user_type, 
+             inn, company_name, legal_address,
+             birth_date, passport_series, passport_number, passport_issue_date, passport_issued_by,
+             False)
         )
         user_id = cur.fetchone()[0]
         conn.commit()
@@ -196,14 +214,20 @@ def handle_list_users(event: Dict[str, Any]) -> Dict[str, Any]:
         cur = conn.cursor()
         
         cur.execute(
-            "SELECT id, email, name, phone, user_type, approved, submitted_at FROM users ORDER BY submitted_at DESC"
+            """SELECT id, email, name, phone, user_type, approved, submitted_at,
+                      inn, company_name, legal_address,
+                      birth_date, passport_series, passport_number, passport_issue_date, passport_issued_by
+               FROM users ORDER BY submitted_at DESC"""
         )
         rows = cur.fetchall()
         
         users = []
         for row in rows:
-            user_id, email, name, phone, user_type, approved, submitted_at = row
-            users.append({
+            (user_id, email, name, phone, user_type, approved, submitted_at,
+             inn, company_name, legal_address,
+             birth_date, passport_series, passport_number, passport_issue_date, passport_issued_by) = row
+            
+            user_data = {
                 'id': user_id,
                 'email': email,
                 'name': name,
@@ -211,7 +235,20 @@ def handle_list_users(event: Dict[str, Any]) -> Dict[str, Any]:
                 'user_type': user_type,
                 'approved': approved,
                 'submitted_at': submitted_at.isoformat() if submitted_at else None
-            })
+            }
+            
+            if user_type == 'legal':
+                user_data['inn'] = inn
+                user_data['company_name'] = company_name
+                user_data['legal_address'] = legal_address
+            else:
+                user_data['birth_date'] = birth_date
+                user_data['passport_series'] = passport_series
+                user_data['passport_number'] = passport_number
+                user_data['passport_issue_date'] = passport_issue_date
+                user_data['passport_issued_by'] = passport_issued_by
+            
+            users.append(user_data)
         
         cur.close()
         conn.close()
