@@ -378,6 +378,7 @@ export default function Index() {
   const [uploadFileType, setUploadFileType] = useState<'document' | 'media'>('document');
   const [uploadMediaType, setUploadMediaType] = useState<'image' | 'video'>('image');
   const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false);
+  const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
   const [isSendMessageDialogOpen, setIsSendMessageDialogOpen] = useState(false);
   const [messageRecipient, setMessageRecipient] = useState<string>('');
   const [messageSubject, setMessageSubject] = useState<string>('');
@@ -1582,14 +1583,55 @@ export default function Index() {
   const handleDeleteCurrentUserAccount = async () => {
     if (!currentUser) return;
     
+    if (!deleteAccountPassword) {
+      toast({
+        title: "Ошибка",
+        description: "Введите пароль для подтверждения удаления",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
-      const response = await fetch('https://functions.poehali.dev/9cd5f036-0bca-495b-9742-de598c37754f', {
-        method: 'DELETE',
+      // Проверяем пароль через login endpoint
+      const loginResponse = await fetch('https://functions.poehali.dev/25a9ecf9-110a-4838-b707-39c64fa07f05', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: currentUser.email })
+        body: JSON.stringify({
+          email: currentUser.email,
+          password: deleteAccountPassword
+        })
       });
       
-      if (!response.ok) {
+      const loginData = await loginResponse.json();
+      
+      if (!loginResponse.ok || !loginData.success) {
+        toast({
+          title: "Неверный пароль",
+          description: "Введён неправильный пароль",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Если пароль верный, удаляем аккаунт
+      const user = users.find(u => u.email === currentUser.email);
+      if (!user || !user.id) {
+        toast({
+          title: "Ошибка",
+          description: "Пользователь не найден",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const deleteResponse = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=delete&user_id=${user.id}`, {
+        method: 'DELETE'
+      });
+      
+      const deleteData = await deleteResponse.json();
+      
+      if (!deleteResponse.ok || !deleteData.success) {
         throw new Error('Failed to delete account');
       }
       
@@ -1597,6 +1639,7 @@ export default function Index() {
       setIsLoggedIn(false);
       setCurrentUser(null);
       setIsDeleteAccountDialogOpen(false);
+      setDeleteAccountPassword('');
       
       toast({
         title: "Аккаунт удалён",
@@ -5294,7 +5337,7 @@ export default function Index() {
               Вы уверены, что хотите удалить свой аккаунт? Это действие необратимо.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-4">
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-900">
                 <strong>Внимание:</strong> После удаления аккаунта:
@@ -5305,12 +5348,41 @@ export default function Index() {
                 <li>Восстановление будет невозможно</li>
               </ul>
             </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="delete-account-password">Введите пароль для подтверждения *</Label>
+              <Input
+                id="delete-account-password"
+                type="password"
+                value={deleteAccountPassword}
+                onChange={(e) => setDeleteAccountPassword(e.target.value)}
+                placeholder="Ваш текущий пароль"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && deleteAccountPassword) {
+                    handleDeleteCurrentUserAccount();
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Для безопасности введите пароль от вашей учетной записи
+              </p>
+            </div>
           </div>
           <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsDeleteAccountDialogOpen(false);
+                setDeleteAccountPassword('');
+              }}
+            >
               Отмена
             </Button>
-            <Button variant="destructive" onClick={handleDeleteCurrentUserAccount}>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteCurrentUserAccount}
+              disabled={!deleteAccountPassword}
+            >
               <Icon name="Trash2" size={18} className="mr-2" />
               Удалить аккаунт
             </Button>
