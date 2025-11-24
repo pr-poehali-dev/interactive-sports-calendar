@@ -2902,11 +2902,11 @@ export default function Index() {
           <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5 animate-fade-in">
             <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium opacity-90">Всего мероприятий</CardTitle>
+                <CardTitle className="text-sm font-medium opacity-90">Всего мероприятий в плане</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <div className="text-3xl font-bold">{events.length}</div>
+                  <div className="text-3xl font-bold">{approvedEvents.length}</div>
                   <Icon name="Calendar" size={32} className="opacity-50" />
                 </div>
               </CardContent>
@@ -2918,7 +2918,7 @@ export default function Index() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <div className="text-3xl font-bold">{upcomingEvents.length}</div>
+                  <div className="text-3xl font-bold">{approvedEvents.filter(e => e.status === 'upcoming').length}</div>
                   <Icon name="CalendarPlus" size={32} className="opacity-50" />
                 </div>
               </CardContent>
@@ -2930,7 +2930,7 @@ export default function Index() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <div className="text-3xl font-bold">{pastEvents.length}</div>
+                  <div className="text-3xl font-bold">{approvedEvents.filter(e => e.status === 'past').length}</div>
                   <Icon name="CheckCircle" size={32} className="opacity-50" />
                 </div>
               </CardContent>
