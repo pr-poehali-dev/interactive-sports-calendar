@@ -389,9 +389,11 @@ export default function Index() {
   const [isDeleteAllEventsDialogOpen, setIsDeleteAllEventsDialogOpen] = useState(false);
   const [deleteAllEventsPassword, setDeleteAllEventsPassword] = useState('');
   const [isDeletingAllEvents, setIsDeletingAllEvents] = useState(false);
-  const [deletePeriodType, setDeletePeriodType] = useState<'all' | 'year' | 'month'>('all');
+  const [deletePeriodType, setDeletePeriodType] = useState<'all' | 'year' | 'month' | 'range'>('all');
   const [deleteYear, setDeleteYear] = useState<string>(new Date().getFullYear().toString());
   const [deleteMonth, setDeleteMonth] = useState<string>('');
+  const [deleteDateFrom, setDeleteDateFrom] = useState<string>('');
+  const [deleteDateTo, setDeleteDateTo] = useState<string>('');
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ 
     email: '', 
@@ -1870,6 +1872,16 @@ export default function Index() {
       });
     }
     
+    if (deletePeriodType === 'range') {
+      if (!deleteDateFrom || !deleteDateTo) return [];
+      const fromDate = new Date(deleteDateFrom);
+      const toDate = new Date(deleteDateTo);
+      return events.filter(e => {
+        const eventDate = new Date(e.date);
+        return eventDate >= fromDate && eventDate <= toDate;
+      });
+    }
+    
     return [];
   };
 
@@ -1923,6 +1935,8 @@ export default function Index() {
       setDeleteAllEventsPassword('');
       setDeletePeriodType('all');
       setDeleteMonth('');
+      setDeleteDateFrom('');
+      setDeleteDateTo('');
       
       if (successCount > 0) {
         toast({
@@ -5461,11 +5475,17 @@ export default function Index() {
           <div className="py-4 space-y-4">
             <div className="grid gap-2">
               <Label>Выберите период удаления</Label>
-              <Select value={deletePeriodType} onValueChange={(value: 'all' | 'year' | 'month') => {
+              <Select value={deletePeriodType} onValueChange={(value: 'all' | 'year' | 'month' | 'range') => {
                 setDeletePeriodType(value);
                 if (value === 'month' && !deleteMonth) {
                   const now = new Date();
                   setDeleteMonth(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+                }
+                if (value === 'range' && (!deleteDateFrom || !deleteDateTo)) {
+                  const now = new Date();
+                  const yearStart = new Date(now.getFullYear(), 0, 1);
+                  setDeleteDateFrom(yearStart.toISOString().split('T')[0]);
+                  setDeleteDateTo(now.toISOString().split('T')[0]);
                 }
               }}>
                 <SelectTrigger>
@@ -5475,6 +5495,7 @@ export default function Index() {
                   <SelectItem value="all">Все мероприятия</SelectItem>
                   <SelectItem value="year">За конкретный год</SelectItem>
                   <SelectItem value="month">За конкретный месяц</SelectItem>
+                  <SelectItem value="range">За период (диапазон дат)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -5506,6 +5527,37 @@ export default function Index() {
                   onChange={(e) => setDeleteMonth(e.target.value)}
                   disabled={isDeletingAllEvents}
                 />
+              </div>
+            )}
+            
+            {deletePeriodType === 'range' && (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="delete-date-from">Дата начала периода</Label>
+                  <Input
+                    id="delete-date-from"
+                    type="date"
+                    value={deleteDateFrom}
+                    onChange={(e) => setDeleteDateFrom(e.target.value)}
+                    disabled={isDeletingAllEvents}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="delete-date-to">Дата окончания периода</Label>
+                  <Input
+                    id="delete-date-to"
+                    type="date"
+                    value={deleteDateTo}
+                    onChange={(e) => setDeleteDateTo(e.target.value)}
+                    disabled={isDeletingAllEvents}
+                    min={deleteDateFrom}
+                  />
+                </div>
+                {deleteDateFrom && deleteDateTo && deleteDateFrom > deleteDateTo && (
+                  <p className="text-sm text-red-600">
+                    ⚠️ Дата окончания должна быть позже даты начала
+                  </p>
+                )}
               </div>
             )}
             
@@ -5561,6 +5613,8 @@ export default function Index() {
                 setDeleteAllEventsPassword('');
                 setDeletePeriodType('all');
                 setDeleteMonth('');
+                setDeleteDateFrom('');
+                setDeleteDateTo('');
               }}
               disabled={isDeletingAllEvents}
             >
