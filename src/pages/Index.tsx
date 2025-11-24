@@ -1418,24 +1418,41 @@ export default function Index() {
   
   const handleRejectUser = async (email: string) => {
     const user = users.find(u => u.email === email);
-    if (!user || !user.id) return;
+    console.log('handleRejectUser called for:', email, 'user:', user);
+    
+    if (!user || !user.id) {
+      console.error('User not found or missing ID:', user);
+      toast({
+        title: "Ошибка",
+        description: "Пользователь не найден или отсутствует ID",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
-      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=delete&user_id=${user.id}`, {
+      const url = `https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=delete&user_id=${user.id}`;
+      console.log('DELETE request to:', url);
+      
+      const response = await fetch(url, {
         method: 'DELETE'
       });
       
+      console.log('DELETE response status:', response.status);
       const data = await response.json();
+      console.log('DELETE response data:', data);
       
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to delete user');
       }
       
       setUsers(users.filter(u => u.id !== user.id));
+      console.log('User removed from local state');
     } catch (error) {
+      console.error('Error deleting user:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось удалить пользователя",
+        description: `Не удалось удалить пользователя: ${error}`,
         variant: "destructive"
       });
       return;

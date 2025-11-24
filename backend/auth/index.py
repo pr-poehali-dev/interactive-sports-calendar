@@ -282,6 +282,8 @@ def handle_delete_user(event: Dict[str, Any]) -> Dict[str, Any]:
     params = event.get('queryStringParameters', {}) or {}
     user_id = params.get('user_id')
     
+    print(f'DELETE USER REQUEST: user_id={user_id}')
+    
     if not user_id:
         return {
             'statusCode': 400,
@@ -295,12 +297,15 @@ def handle_delete_user(event: Dict[str, Any]) -> Dict[str, Any]:
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
         cur = conn.cursor()
         
+        print(f'Executing DELETE for user_id={user_id}')
         cur.execute("DELETE FROM users WHERE id = %s RETURNING id", (user_id,))
         deleted = cur.fetchone()
+        print(f'DELETE result: {deleted}')
         
         if not deleted:
             cur.close()
             conn.close()
+            print('User not found in database')
             return {
                 'statusCode': 404,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
@@ -312,6 +317,7 @@ def handle_delete_user(event: Dict[str, Any]) -> Dict[str, Any]:
         cur.close()
         conn.close()
         
+        print(f'User {deleted[0]} successfully deleted')
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
@@ -319,7 +325,7 @@ def handle_delete_user(event: Dict[str, Any]) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     except Exception as e:
-        print(f'Database error: {str(e)}')
+        print(f'Database error in delete: {str(e)}')
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
