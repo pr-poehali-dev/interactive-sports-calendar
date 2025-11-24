@@ -53,6 +53,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     smtp_port = int(os.environ.get('SMTP_PORT', '587'))
     smtp_user = os.environ.get('SMTP_USER')
     smtp_password = os.environ.get('SMTP_PASSWORD')
+    smtp_from_email = os.environ.get('SMTP_FROM_EMAIL', smtp_user)
+    smtp_from_name = os.environ.get('SMTP_FROM_NAME', 'Единый календарный план м.о. Истра')
     
     if not all([smtp_host, smtp_user, smtp_password]):
         return {
@@ -64,9 +66,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From'] = f'Истра События <{smtp_user}>'
+    msg['From'] = f'{smtp_from_name} <{smtp_from_email}>'
     msg['To'] = to_email
-    msg['Reply-To'] = smtp_user
+    msg['Reply-To'] = smtp_from_email
     
     # Добавляем заголовки для уменьшения вероятности попадания в спам
     msg['X-Mailer'] = 'Python SMTP'
