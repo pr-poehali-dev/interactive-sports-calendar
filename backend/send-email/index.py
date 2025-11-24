@@ -64,10 +64,24 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From'] = smtp_user
+    msg['From'] = f'Истра События <{smtp_user}>'
     msg['To'] = to_email
+    msg['Reply-To'] = smtp_user
     
+    # Добавляем заголовки для уменьшения вероятности попадания в спам
+    msg['X-Mailer'] = 'Python SMTP'
+    msg['X-Priority'] = '3'
+    
+    # Создаем текстовую версию из HTML (простое удаление тегов)
+    import re
+    text_content = re.sub('<[^<]+?>', '', html_content)
+    text_content = re.sub(r'\s+', ' ', text_content).strip()
+    
+    # Добавляем сначала текстовую версию, потом HTML
+    text_part = MIMEText(text_content, 'plain', 'utf-8')
     html_part = MIMEText(html_content, 'html', 'utf-8')
+    
+    msg.attach(text_part)
     msg.attach(html_part)
     
     try:
