@@ -386,6 +386,9 @@ export default function Index() {
   const [broadcastSubject, setBroadcastSubject] = useState<string>('');
   const [broadcastBody, setBroadcastBody] = useState<string>('');
   const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
+  const [isDeleteAllEventsDialogOpen, setIsDeleteAllEventsDialogOpen] = useState(false);
+  const [deleteAllEventsPassword, setDeleteAllEventsPassword] = useState('');
+  const [isDeletingAllEvents, setIsDeletingAllEvents] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ 
     email: '', 
@@ -1841,6 +1844,66 @@ export default function Index() {
       return;
     }
     setIsAddDialogOpen(true);
+  };
+
+  const handleDeleteAllEvents = async () => {
+    if (deleteAllEventsPassword !== storedAdminPassword) {
+      toast({
+        title: "Ошибка",
+        description: "Неверный пароль администратора",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsDeletingAllEvents(true);
+    
+    try {
+      const allEventIds = events.map(e => e.id);
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const eventId of allEventIds) {
+        try {
+          const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=delete&event_id=${eventId}`, {
+            method: 'DELETE'
+          });
+          
+          if (response.ok) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (error) {
+          failCount++;
+          console.error(`Failed to delete event ${eventId}:`, error);
+        }
+      }
+      
+      setIsDeletingAllEvents(false);
+      setIsDeleteAllEventsDialogOpen(false);
+      setDeleteAllEventsPassword('');
+      
+      if (successCount > 0) {
+        toast({
+          title: "Мероприятия удалены",
+          description: `Удалено: ${successCount} из ${allEventIds.length}${failCount > 0 ? `. Ошибок: ${failCount}` : ''}`
+        });
+      } else {
+        toast({
+          title: "Ошибка удаления",
+          description: "Не удалось удалить мероприятия",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      setIsDeletingAllEvents(false);
+      toast({
+        title: "Ошибка",
+        description: "Произошла ошибка при удалении мероприятий",
+        variant: "destructive"
+      });
+    }
   };
 
   const calendarData = useMemo(() => {
@@ -4265,6 +4328,19 @@ export default function Index() {
 
           {isAdmin && (
             <TabsContent value="pending">
+              {events.length > 0 && (
+                <div className="mb-6">
+                  <Button 
+                    variant="destructive"
+                    className="w-full"
+                    size="lg"
+                    onClick={() => setIsDeleteAllEventsDialogOpen(true)}
+                  >
+                    <Icon name="Trash2" size={20} className="mr-2" />
+                    Удалить все мероприятия ({events.length})
+                  </Button>
+                </div>
+              )}
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {pendingEvents.length === 0 ? (
                   <Card className="col-span-full text-center py-12 border-2 border-dashed">
@@ -5323,6 +5399,85 @@ export default function Index() {
                 <>
                   <Icon name="Send" size={18} className="mr-2" />
                   Отправить всем
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete All Events Dialog */}
+      <Dialog open={isDeleteAllEventsDialogOpen} onOpenChange={setIsDeleteAllEventsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Icon name="AlertTriangle" size={24} />
+              Удаление всех мероприятий
+            </DialogTitle>
+            <DialogDescription>
+              Вы уверены, что хотите удалить ВСЕ мероприятия из системы? Это действие необратимо.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-900 font-semibold mb-2">
+                ВНИМАНИЕ! Будут удалены:
+              </p>
+              <ul className="list-disc ml-5 text-sm text-red-800 space-y-1">
+                <li>Все одобренные мероприятия: {approvedEvents.length} шт.</li>
+                <li>Все заявки на модерации: {pendingEvents.length} шт.</li>
+                <li>Документы и медиафайлы</li>
+                <li>История и результаты</li>
+              </ul>
+              <p className="text-sm text-red-900 font-semibold mt-3">
+                Итого к удалению: {events.length} мероприятий
+              </p>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="delete-all-password">
+                Введите пароль администратора для подтверждения *
+              </Label>
+              <Input
+                id="delete-all-password"
+                type="password"
+                value={deleteAllEventsPassword}
+                onChange={(e) => setDeleteAllEventsPassword(e.target.value)}
+                placeholder="Пароль администратора"
+                disabled={isDeletingAllEvents}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !isDeletingAllEvents) {
+                    handleDeleteAllEvents();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsDeleteAllEventsDialogOpen(false);
+                setDeleteAllEventsPassword('');
+              }}
+              disabled={isDeletingAllEvents}
+            >
+              Отмена
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteAllEvents}
+              disabled={isDeletingAllEvents || !deleteAllEventsPassword}
+            >
+              {isDeletingAllEvents ? (
+                <>
+                  <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
+                  Удаление...
+                </>
+              ) : (
+                <>
+                  <Icon name="Trash2" size={18} className="mr-2" />
+                  Удалить все ({events.length})
                 </>
               )}
             </Button>
