@@ -396,6 +396,9 @@ export default function Index() {
   const [deleteDateFrom, setDeleteDateFrom] = useState<string>('');
   const [deleteDateTo, setDeleteDateTo] = useState<string>('');
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [rejectingEventId, setRejectingEventId] = useState<number | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string>('');
   const [registerForm, setRegisterForm] = useState({ 
     email: '', 
     password: '', 
@@ -852,7 +855,7 @@ export default function Index() {
     }
   };
   
-  const handleRejectEvent = async (eventId: number) => {
+  const handleRejectEvent = async (eventId: number, reason?: string) => {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
     
@@ -892,6 +895,12 @@ export default function Index() {
             </tr>
           </table>
           
+          ${reason ? `
+          <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0;"><strong>Причина отклонения:</strong></p>
+            <p style="margin: 10px 0 0 0;">${reason}</p>
+          </div>
+          ` : `
           <p><strong>Возможные причины отклонения:</strong></p>
           <ul>
             <li>Неполная или некорректная информация о мероприятии</li>
@@ -899,6 +908,7 @@ export default function Index() {
             <li>Конфликт по датам с другими событиями</li>
             <li>Недостаточная подготовка документации</li>
           </ul>
+          `}
           
           <p>Вы можете уточнить детали и подать заявку повторно с учётом замечаний.</p>
           
@@ -936,11 +946,27 @@ export default function Index() {
       }
     }
     
+    setIsRejectDialogOpen(false);
+    setRejectingEventId(null);
+    setRejectionReason('');
+    
     toast({
       title: "Мероприятие отклонено",
       description: `"${event.title}" было удалено из заявок`,
       variant: "destructive"
     });
+  };
+  
+  const openRejectDialog = (eventId: number) => {
+    setRejectingEventId(eventId);
+    setRejectionReason('');
+    setIsRejectDialogOpen(true);
+  };
+  
+  const confirmRejectEvent = () => {
+    if (rejectingEventId) {
+      handleRejectEvent(rejectingEventId, rejectionReason || undefined);
+    }
   };
   
   const handleEditEvent = (event: Event) => {
@@ -4544,7 +4570,7 @@ export default function Index() {
                           <Button 
                             variant="destructive"
                             className="flex-1"
-                            onClick={() => handleRejectEvent(event.id)}
+                            onClick={() => openRejectDialog(event.id)}
                           >
                             <Icon name="X" size={18} className="mr-2" />
                             Отклонить
@@ -5725,6 +5751,55 @@ export default function Index() {
                   Удалить все ({events.length})
                 </>
               )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Reject Event Dialog */}
+      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Icon name="XCircle" size={24} />
+              Отклонение мероприятия
+            </DialogTitle>
+            <DialogDescription>
+              Укажите причину отклонения (необязательно). Она будет отправлена организатору на email.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="rejection-reason">Причина отклонения</Label>
+              <Textarea
+                id="rejection-reason"
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Например: Конфликт по датам с другим мероприятием"
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground">
+                Если не указать причину, будет отправлен стандартный список возможных причин
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsRejectDialogOpen(false);
+                setRejectingEventId(null);
+                setRejectionReason('');
+              }}
+            >
+              Отмена
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmRejectEvent}
+            >
+              <Icon name="X" size={18} className="mr-2" />
+              Отклонить
             </Button>
           </div>
         </DialogContent>
