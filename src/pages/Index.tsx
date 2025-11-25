@@ -860,13 +860,30 @@ export default function Index() {
     if (!event) return;
     
     try {
-      await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=delete&event_id=${eventId}`, {
+      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=delete&event_id=${eventId}`, {
         method: 'DELETE'
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Delete event failed:', errorData);
+        toast({
+          title: "Ошибка удаления",
+          description: errorData.error || "Не удалось удалить мероприятие из базы",
+          variant: "destructive"
+        });
+        return;
+      }
       
       setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
     } catch (error) {
       console.error('Error deleting event:', error);
+      toast({
+        title: "Ошибка сети",
+        description: "Не удалось связаться с сервером",
+        variant: "destructive"
+      });
+      return;
     }
     
     const emailHtml = `
