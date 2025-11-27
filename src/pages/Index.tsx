@@ -859,6 +859,8 @@ export default function Index() {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
     
+    let deleteSuccess = false;
+    
     try {
       const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=delete&event_id=${eventId}`, {
         method: 'DELETE'
@@ -875,6 +877,7 @@ export default function Index() {
         return;
       }
       
+      deleteSuccess = true;
       setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
     } catch (error) {
       console.error('Error deleting event:', error);
@@ -885,6 +888,8 @@ export default function Index() {
       });
       return;
     }
+    
+    if (!deleteSuccess) return;
     
     const emailHtml = `
       <html>
