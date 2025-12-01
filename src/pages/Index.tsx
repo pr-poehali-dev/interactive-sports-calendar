@@ -850,10 +850,10 @@ export default function Index() {
       deleteSuccess = true;
       setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
     } catch (error) {
-      console.error('Error deleting event:', error);
+      console.error('handleRejectEvent error:', error);
       toast({
         title: "Ошибка сети",
-        description: "Не удалось связаться с сервером",
+        description: `Не удалось связаться с сервером: ${error}`,
         variant: "destructive"
       });
       return;
@@ -1507,7 +1507,7 @@ export default function Index() {
     }
     
     try {
-      const url = `https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=users&action=delete&user_id=${user.id}`;
+      const url = `https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=users&user_id=${user.id}`;
       console.log('DELETE request to:', url);
       
       const response = await fetch(url, {
@@ -1525,10 +1525,10 @@ export default function Index() {
       setUsers(users.filter(u => u.id !== user.id));
       console.log('User removed from local state');
     } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error('handleRejectUser error:', error);
       toast({
         title: "Ошибка",
-        description: `Не удалось удалить пользователя: ${error}`,
+        description: `Не удалось отклонить пользователя: ${error}`,
         variant: "destructive"
       });
       return;
@@ -1694,7 +1694,7 @@ export default function Index() {
     if (!user || !user.id) return;
     
     try {
-      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=users&action=delete&user_id=${user.id}`, {
+      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=users&user_id=${user.id}`, {
         method: 'DELETE'
       });
       
@@ -1711,9 +1711,10 @@ export default function Index() {
         description: `${user.name} удалён из системы`
       });
     } catch (error) {
+      console.error('handleAdminDeleteUser error:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось удалить пользователя. Попробуйте позже.",
+        description: `Не удалось удалить пользователя: ${error}`,
         variant: "destructive"
       });
     }
