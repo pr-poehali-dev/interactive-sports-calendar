@@ -489,8 +489,21 @@ export default function Index() {
     }
   }, [isAdmin]);
 
-  // Загрузка отключена: достигнут лимит вызовов Cloud Functions
-  // Необходимо обновить подписку на poehali.dev/p/pay
+  useEffect(() => {
+    const loadEvents = async () => {
+      try {
+        const url = 'https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events';
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.events) {
+          setEvents(data.events);
+        }
+      } catch (err) {
+        console.error('Failed to load events:', err);
+      }
+    };
+    loadEvents();
+  }, []);
 
   useEffect(() => {
     const today = new Date();
