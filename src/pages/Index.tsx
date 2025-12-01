@@ -498,14 +498,7 @@ export default function Index() {
     const loadEvents = async () => {
       try {
         console.log('Loading events from API...');
-        const response = await fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events', {
-          method: 'GET',
-          mode: 'cors',
-          credentials: 'omit',
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
+        const response = await fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events');
         console.log('Response status:', response.status);
         
         if (!response.ok) {
