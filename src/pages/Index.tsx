@@ -832,7 +832,7 @@ export default function Index() {
     let deleteSuccess = false;
     
     try {
-      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=delete&event_id=${eventId}`, {
+      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&event_id=${eventId}`, {
         method: 'DELETE'
       });
       
