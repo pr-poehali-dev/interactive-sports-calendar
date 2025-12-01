@@ -112,34 +112,29 @@ const initialEvents: Event[] = [
   {
     id: 1,
     eventNumber: 'МО-2025-001',
-    title: 'Первенство муниципального округа Истра по самбо среди юношей 2012-2013 года рождения',
-    date: '2025-11-15',
-    time: '10:00',
-    location: 'Спортивный комплекс "Истра", ул. Ленина, 1',
+    title: 'Городской марафон "5 Верст"',
+    date: '2025-11-29',
+    time: '09:00',
+    location: 'Центральный парк, г. Истра',
     eventType: 'local',
     eventLevel: 'municipal',
-    sport: 'sambo',
+    sport: 'running',
     participants: 0,
     maxParticipants: 50,
     status: 'upcoming',
-    description: 'Соревнования по самбо среди юношей 2012-2013 года рождения. Регистрация участников до 10 ноября 2025 года.',
-    organizer: 'Управление физической культуры и спорта м.о. Истра',
-    approved: true,
-    submittedAt: new Date().toISOString(),
-    documents: [
-      { name: 'Положение о первенстве по самбо.pdf', url: '#' },
-      { name: 'Регламент соревнований.pdf', url: '#' },
-      { name: 'Заявка на участие.docx', url: '#' }
-    ],
+    description: '',
+    organizer: 'Истран',
+    approved: false,
+    submittedAt: '2025-11-24T13:09:24.755503Z',
+    submittedBy: 'ereminvaleriy87@gmail.com',
+    documents: [],
+    media: [],
     requiredDocuments: [
-      { type: 'approval_letter', name: 'Письмо о согласовании', uploaded: true, url: '#', fileName: 'approval.pdf' },
-      { type: 'police_notification', name: 'Уведомление ОМВД', uploaded: true, url: '#', fileName: 'police.pdf' },
-      { type: 'security_plan', name: 'План ОБ', uploaded: true, url: '#', fileName: 'security.pdf' },
-      { type: 'regulations', name: 'Положение', uploaded: true, url: '#', fileName: 'regulations.pdf' },
-      { type: 'protocols', name: 'Протоколы', uploaded: true, url: '#', fileName: 'protocols.pdf' }
-    ],
-    media: [
-      { type: 'image', url: '#', name: 'photo1.jpg' }
+      { type: 'approval_letter', name: 'Письмо о согласовании', uploaded: false },
+      { type: 'police_notification', name: 'Уведомление ОМВД', uploaded: false },
+      { type: 'security_plan', name: 'План ОБ', uploaded: false },
+      { type: 'regulations', name: 'Положение', uploaded: false },
+      { type: 'protocols', name: 'Протоколы', uploaded: false }
     ]
   },
   {
@@ -497,16 +492,23 @@ export default function Index() {
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        console.log('Loading events from API...');
-        const response = await fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events');
-        console.log('Response status:', response.status);
+        const url = 'https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events';
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(url, {
+          signal: controller.signal,
+          cache: 'no-cache'
+        });
+        
+        clearTimeout(timeoutId);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Received data:', data);
         
         if (data.events) {
           const mappedEvents = data.events.map((e: any) => ({
@@ -533,23 +535,27 @@ export default function Index() {
             media: e.media || [],
             requiredDocuments: e.required_documents || []
           }));
-          console.log('Mapped events:', mappedEvents.length);
           setEvents(mappedEvents);
+          localStorage.setItem('cached_events', JSON.stringify(mappedEvents));
         }
-      } catch (err) {
-        console.error('Failed to load events:', err);
-        toast({
-          title: 'Ошибка загрузки',
-          description: 'Не удалось загрузить мероприятия. Попробуйте обновить страницу.',
-          variant: 'destructive'
-        });
+      } catch (err: any) {
+        console.error('Failed to load events:', err.message);
+        
+        const cachedEvents = localStorage.getItem('cached_events');
+        if (cachedEvents) {
+          try {
+            setEvents(JSON.parse(cachedEvents));
+          } catch (parseErr) {
+            console.error('Failed to parse cached events');
+          }
+        }
       }
     };
 
     loadEvents();
     const interval = setInterval(loadEvents, 30000);
     return () => clearInterval(interval);
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     const today = new Date();
