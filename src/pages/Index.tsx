@@ -500,8 +500,10 @@ export default function Index() {
         console.log('Loading events from API...');
         const response = await fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events', {
           method: 'GET',
+          mode: 'cors',
+          credentials: 'omit',
           headers: {
-            'Content-Type': 'application/json'
+            'Accept': 'application/json'
           }
         });
         console.log('Response status:', response.status);
