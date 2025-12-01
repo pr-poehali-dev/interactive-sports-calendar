@@ -1,6 +1,13 @@
 {
   "tests": [
     {
+      "name": "List events",
+      "method": "GET",
+      "path": "/?action=list&resource=events",
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Check duplicate email",
       "method": "POST",
       "path": "/?action=register",

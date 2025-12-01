@@ -495,45 +495,66 @@ export default function Index() {
   }, [isAdmin]);
 
   useEffect(() => {
-    const loadEvents = () => {
-      fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events')
-        .then(res => res.json())
-        .then(data => {
-          if (data.events) {
-            const mappedEvents = data.events.map((e: any) => ({
-              id: e.id,
-              eventNumber: e.event_number,
-              title: e.title,
-              date: e.date,
-              time: e.time,
-              location: e.location,
-              eventType: e.event_type,
-              eventLevel: e.event_level,
-              sport: e.sport,
-              participants: e.participants,
-              maxParticipants: e.max_participants,
-              maxSpectators: e.max_spectators,
-              status: e.status,
-              description: e.description,
-              organizer: e.organizer,
-              result: e.result,
-              approved: e.approved,
-              submittedAt: e.submitted_at,
-              submittedBy: e.submitted_by,
-              documents: e.documents || [],
-              media: e.media || [],
-              requiredDocuments: e.required_documents || []
-            }));
-            setEvents(mappedEvents);
+    const loadEvents = async () => {
+      try {
+        console.log('Loading events from API...');
+        const response = await fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
           }
-        })
-        .catch(err => console.error('Failed to load events:', err));
+        });
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Received data:', data);
+        
+        if (data.events) {
+          const mappedEvents = data.events.map((e: any) => ({
+            id: e.id,
+            eventNumber: e.event_number,
+            title: e.title,
+            date: e.date,
+            time: e.time,
+            location: e.location,
+            eventType: e.event_type,
+            eventLevel: e.event_level,
+            sport: e.sport,
+            participants: e.participants,
+            maxParticipants: e.max_participants,
+            maxSpectators: e.max_spectators,
+            status: e.status,
+            description: e.description,
+            organizer: e.organizer,
+            result: e.result,
+            approved: e.approved,
+            submittedAt: e.submitted_at,
+            submittedBy: e.submitted_by,
+            documents: e.documents || [],
+            media: e.media || [],
+            requiredDocuments: e.required_documents || []
+          }));
+          console.log('Mapped events:', mappedEvents.length);
+          setEvents(mappedEvents);
+        }
+      } catch (err) {
+        console.error('Failed to load events:', err);
+        toast({
+          title: 'Ошибка загрузки',
+          description: 'Не удалось загрузить мероприятия. Попробуйте обновить страницу.',
+          variant: 'destructive'
+        });
+      }
     };
 
     loadEvents();
     const interval = setInterval(loadEvents, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     const today = new Date();
