@@ -489,73 +489,8 @@ export default function Index() {
     }
   }, [isAdmin]);
 
-  useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        const url = 'https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events';
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
-        const response = await fetch(url, {
-          signal: controller.signal,
-          cache: 'no-cache'
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.events) {
-          const mappedEvents = data.events.map((e: any) => ({
-            id: e.id,
-            eventNumber: e.event_number,
-            title: e.title,
-            date: e.date,
-            time: e.time,
-            location: e.location,
-            eventType: e.event_type,
-            eventLevel: e.event_level,
-            sport: e.sport,
-            participants: e.participants,
-            maxParticipants: e.max_participants,
-            maxSpectators: e.max_spectators,
-            status: e.status,
-            description: e.description,
-            organizer: e.organizer,
-            result: e.result,
-            approved: e.approved,
-            submittedAt: e.submitted_at,
-            submittedBy: e.submitted_by,
-            documents: e.documents || [],
-            media: e.media || [],
-            requiredDocuments: e.required_documents || []
-          }));
-          setEvents(mappedEvents);
-          localStorage.setItem('cached_events', JSON.stringify(mappedEvents));
-        }
-      } catch (err: any) {
-        console.error('Failed to load events:', err.message);
-        
-        const cachedEvents = localStorage.getItem('cached_events');
-        if (cachedEvents) {
-          try {
-            setEvents(JSON.parse(cachedEvents));
-          } catch (parseErr) {
-            console.error('Failed to parse cached events');
-          }
-        }
-      }
-    };
-
-    loadEvents();
-    const interval = setInterval(loadEvents, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  // Загрузка отключена: достигнут лимит вызовов Cloud Functions
+  // Необходимо обновить подписку на poehali.dev/p/pay
 
   useEffect(() => {
     const today = new Date();
