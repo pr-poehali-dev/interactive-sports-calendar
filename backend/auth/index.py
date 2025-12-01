@@ -706,7 +706,10 @@ def handle_delete_event(event: Dict[str, Any]) -> Dict[str, Any]:
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
         cur = conn.cursor()
         
-        cur.execute('UPDATE events SET approved = FALSE WHERE id = %s', (event_id,))
+        cur.execute('DELETE FROM event_media WHERE event_id = %s', (event_id,))
+        cur.execute('DELETE FROM event_documents WHERE event_id = %s', (event_id,))
+        cur.execute('DELETE FROM event_required_documents WHERE event_id = %s', (event_id,))
+        cur.execute('DELETE FROM events WHERE id = %s', (event_id,))
         
         conn.commit()
         cur.close()

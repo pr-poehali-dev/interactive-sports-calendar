@@ -1401,7 +1401,7 @@ export default function Index() {
     if (!user || !user.id) return;
     
     try {
-      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=approve&user_id=${user.id}`, {
+      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=users&action=approve&user_id=${user.id}`, {
         method: 'PUT'
       });
       
@@ -1507,7 +1507,7 @@ export default function Index() {
     }
     
     try {
-      const url = `https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=delete&user_id=${user.id}`;
+      const url = `https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=users&action=delete&user_id=${user.id}`;
       console.log('DELETE request to:', url);
       
       const response = await fetch(url, {
@@ -1694,7 +1694,7 @@ export default function Index() {
     if (!user || !user.id) return;
     
     try {
-      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=delete&user_id=${user.id}`, {
+      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=users&action=delete&user_id=${user.id}`, {
         method: 'DELETE'
       });
       
