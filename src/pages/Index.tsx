@@ -1691,14 +1691,22 @@ export default function Index() {
   
   const handleAdminDeleteUser = async (email: string) => {
     const user = users.find(u => u.email === email);
-    if (!user || !user.id) return;
+    console.log('handleAdminDeleteUser called for:', email, 'user:', user);
+    if (!user || !user.id) {
+      console.error('User not found or missing ID');
+      return;
+    }
     
     try {
-      const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=users&user_id=${user.id}`, {
+      const url = `https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=users&user_id=${user.id}`;
+      console.log('DELETE request URL:', url);
+      const response = await fetch(url, {
         method: 'DELETE'
       });
       
+      console.log('DELETE response status:', response.status);
       const data = await response.json();
+      console.log('DELETE response data:', data);
       
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to delete user');
