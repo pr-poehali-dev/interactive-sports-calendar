@@ -557,6 +557,16 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
                 VALUES (%s, %s, %s)
             ''', (event_id, doc.get('name'), doc.get('url')))
         
+        cur.execute('''
+            INSERT INTO event_required_documents (event_id, doc_type, doc_name, uploaded)
+            VALUES 
+                (%s, 'approval_letter', 'Письмо о согласовании', FALSE),
+                (%s, 'police_notification', 'Уведомление ОМВД', FALSE),
+                (%s, 'security_plan', 'План ОБ', FALSE),
+                (%s, 'regulations', 'Положение', FALSE),
+                (%s, 'protocols', 'Протоколы', FALSE)
+        ''', (event_id, event_id, event_id, event_id, event_id))
+        
         conn.commit()
         cur.close()
         conn.close()

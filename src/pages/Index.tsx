@@ -446,6 +446,7 @@ export default function Index() {
     time: '',
     location: '',
     sport: 'running',
+    eventLevel: 'municipal',
     description: '',
     organizer: '',
     maxParticipants: 50,
@@ -489,19 +490,20 @@ export default function Index() {
     }
   }, [isAdmin]);
 
-  useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        const url = 'https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events';
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data.events) {
-          setEvents(data.events);
-        }
-      } catch (err) {
-        console.error('Failed to load events:', err);
+  const loadEvents = async () => {
+    try {
+      const url = 'https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events';
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.events) {
+        setEvents(data.events);
       }
-    };
+    } catch (err) {
+      console.error('Failed to load events:', err);
+    }
+  };
+
+  useEffect(() => {
     loadEvents();
   }, []);
 
@@ -645,8 +647,7 @@ export default function Index() {
     fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events', {
       method: 'POST',
       headers: { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(eventData)
     })
@@ -658,6 +659,7 @@ export default function Index() {
       console.log('Данные ответа:', data);
       if (data.success) {
         setIsAddDialogOpen(false);
+        loadEvents();
         
         if (isAdmin) {
           toast({
