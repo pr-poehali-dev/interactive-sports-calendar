@@ -640,13 +640,22 @@ export default function Index() {
       submitted_by: currentUser?.email
     };
     
+    console.log('Отправка мероприятия:', eventData);
+    
     fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
       body: JSON.stringify(eventData)
     })
-    .then(response => response.json())
+    .then(response => {
+      console.log('Ответ сервера:', response.status, response.statusText);
+      return response.json();
+    })
     .then(data => {
+      console.log('Данные ответа:', data);
       if (data.success) {
         setIsAddDialogOpen(false);
         
