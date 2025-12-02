@@ -604,17 +604,11 @@ export default function Index() {
       return;
     }
     
-    const newId = Math.max(...events.map(e => e.id), 0) + 1;
-    const year = new Date(newEvent.date).getFullYear();
-    
     const eventType = newEvent.eventType || suggestedEventType || 'local';
     const eventLevel = newEvent.eventLevel;
-    const isAutoNumber = eventType === 'local' && (eventLevel === 'municipal' || eventLevel === 'intermunicipal');
     
     let finalEventNumber: string | undefined;
-    if (isAutoNumber) {
-      finalEventNumber = `МО-${year}-${String(newId).padStart(3, '0')}`;
-    } else if (manualEventNumber.trim()) {
+    if (manualEventNumber.trim()) {
       finalEventNumber = manualEventNumber.trim();
     }
     
@@ -727,115 +721,28 @@ export default function Index() {
       if (!response.ok) {
         throw new Error('Failed to approve event');
       }
+      
+      const data = await response.json();
+      const eventNumber = data.event_number;
+      
+      await loadEvents();
+      
+      toast({
+        title: "Мероприятие одобрено ✅",
+        description: eventNumber 
+          ? `"${event.title}" добавлено. Номер: ${eventNumber}. Email отправлен организатору.`
+          : `"${event.title}" добавлено. Email отправлен организатору.`
+      });
     } catch (error) {
       toast({
         title: "Ошибка",
         description: "Не удалось одобрить мероприятие",
         variant: "destructive"
       });
-      return;
-    }
-    
-    const emailHtml = `
-      <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #2563eb;">Ваше мероприятие одобрено!</h2>
-          
-          <p>Добрый день!</p>
-          <p>Ваше мероприятие успешно прошло модерацию и добавлено в <strong>Единый календарный план м.о. Истра</strong>.</p>
-          
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0; border-left: 4px solid #2563eb;">
-            <tr style="background: #f5f5f5;">
-              <td colspan="2" style="padding: 15px; border: 1px solid #ddd;"><strong style="color: #2563eb; font-size: 18px;">${event.title}</strong></td>
-            </tr>
-            ${event.eventNumber ? `<tr>
-              <td style="padding: 10px; border: 1px solid #ddd; width: 40%;"><strong>Номер:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${event.eventNumber}</td>
-            </tr>` : ''}
-            <tr style="background: #f5f5f5;">
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Дата:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${new Date(event.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })} в ${event.time}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Место:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${event.location}</td>
-            </tr>
-            <tr style="background: #f5f5f5;">
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Организатор:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${event.organizer}</td>
-            </tr>
-            ${event.eventLevel ? `<tr>
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Статус:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${eventLevelNames[event.eventLevel]}</td>
-            </tr>` : ''}
-          </table>
-          
-          <p>Теперь участники могут регистрироваться на ваше мероприятие через сайт.</p>
-          
-          <p style="margin: 30px 0;">
-            <a href="${window.location.origin}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px;">Посмотреть на сайте</a>
-          </p>
-          
-          <p>С уважением,<br>Управление физической культуры и спорта м.о. Истра</p>
-          
-          <p style="color: #666; font-size: 12px; margin-top: 40px; border-top: 1px solid #ddd; padding-top: 20px;">
-            г. Истра, ул. Ленина, д. 81 | +7 (495) 994-85-55 (доб. 429)<br>
-            info@sportvokrugistra.ru
-          </p>
-        </body>
-      </html>
-    `;
-    
-    if (event.submittedBy) {
-      console.log('Отправка email организатору:', event.submittedBy);
-      try {
-        const emailPayload = {
-          to: event.submittedBy,
-          subject: `Мероприятие "${event.title}" одобрено - Единый календарный план Истра`,
-          html: emailHtml
-        };
-        console.log('Email payload:', emailPayload);
-        
-        const response = await fetch('https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(emailPayload)
-        });
-        
-        console.log('Email response status:', response.status);
-        const responseData = await response.json();
-        console.log('Email response data:', responseData);
-        
-        if (response.ok) {
-          toast({
-            title: "Мероприятие одобрено ✅",
-            description: `"${event.title}" добавлено. Email отправлен на ${event.submittedBy}`
-          });
-        } else {
-          console.error('Email error:', responseData);
-          toast({
-            title: "Мероприятие одобрено ✅",
-            description: `"${event.title}" добавлено. Email не отправлен: ${responseData.error || 'неизвестная ошибка'}`,
-            variant: "destructive"
-          });
-        }
-      } catch (error) {
-        console.error('Email send error:', error);
-        toast({
-          title: "Мероприятие одобрено ✅",
-          description: `"${event.title}" добавлено. Ошибка отправки email: ${error}`,
-          variant: "destructive"
-        });
-      }
-    } else {
-      console.log('У мероприятия нет submittedBy, email не отправляется');
-      toast({
-        title: "Мероприятие одобрено",
-        description: `"${event.title}" добавлено в календарь`
-      });
     }
   };
   
+
   const handleRejectEvent = async (eventId: number, reason?: string) => {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
@@ -859,7 +766,7 @@ export default function Index() {
       }
       
       deleteSuccess = true;
-      setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
+      await loadEvents();
     } catch (error) {
       console.error('handleRejectEvent error:', error);
       toast({

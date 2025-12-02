@@ -519,8 +519,24 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
     
     try:
         import psycopg2
+        from datetime import datetime
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
         cur = conn.cursor()
+        
+        approved = body_data.get('approved', False)
+        event_type = body_data.get('event_type')
+        event_level = body_data.get('event_level')
+        event_date = body_data.get('date')
+        event_number = body_data.get('event_number')
+        
+        if approved and event_type == 'local' and event_level in ('municipal', 'intermunicipal') and not event_number:
+            year = datetime.strptime(str(event_date), '%Y-%m-%d').year
+            cur.execute('''
+                SELECT COUNT(*) FROM events 
+                WHERE approved = TRUE AND EXTRACT(YEAR FROM date) = %s
+            ''', (year,))
+            approved_count = cur.fetchone()[0]
+            event_number = f'МО-{year}-{str(approved_count + 1).zfill(3)}'
         
         cur.execute('''
             INSERT INTO events (
@@ -530,13 +546,13 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         ''', (
-            body_data.get('event_number'),
+            event_number,
             body_data.get('title'),
-            body_data.get('date'),
+            event_date,
             body_data.get('time'),
             body_data.get('location'),
-            body_data.get('event_type'),
-            body_data.get('event_level'),
+            event_type,
+            event_level,
             body_data.get('sport'),
             body_data.get('description'),
             body_data.get('organizer'),
@@ -544,7 +560,7 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
             body_data.get('max_spectators'),
             body_data.get('participants', 0),
             body_data.get('status', 'upcoming'),
-            body_data.get('approved', False),
+            approved,
             body_data.get('submitted_by')
         ))
         
@@ -599,10 +615,44 @@ def handle_approve_event(event: Dict[str, Any]) -> Dict[str, Any]:
     
     try:
         import psycopg2
+        from datetime import datetime
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
         cur = conn.cursor()
         
-        cur.execute('UPDATE events SET approved = TRUE WHERE id = %s', (event_id,))
+        cur.execute('''
+            SELECT title, date, event_type, event_level, submitted_by 
+            FROM events 
+            WHERE id = %s
+        ''', (event_id,))
+        event_data = cur.fetchone()
+        
+        if not event_data:
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Мероприятие не найдено'}),
+                'isBase64Encoded': False
+            }
+        
+        title, event_date, event_type, event_level, submitted_by = event_data
+        year = datetime.strptime(str(event_date), '%Y-%m-%d').year
+        
+        cur.execute('''
+            SELECT COUNT(*) FROM events 
+            WHERE approved = TRUE AND EXTRACT(YEAR FROM date) = %s
+        ''', (year,))
+        approved_count = cur.fetchone()[0]
+        
+        event_number = None
+        if event_type == 'local' and event_level in ('municipal', 'intermunicipal'):
+            event_number = f'МО-{year}-{str(approved_count + 1).zfill(3)}'
+        
+        if event_number:
+            cur.execute('UPDATE events SET approved = TRUE, event_number = %s WHERE id = %s', (event_number, event_id))
+        else:
+            cur.execute('UPDATE events SET approved = TRUE WHERE id = %s', (event_id,))
         
         cur.execute('''
             INSERT INTO event_required_documents (event_id, doc_type, doc_name, uploaded)
@@ -612,16 +662,45 @@ def handle_approve_event(event: Dict[str, Any]) -> Dict[str, Any]:
                 (%s, 'security_plan', 'План ОБ', FALSE),
                 (%s, 'regulations', 'Положение', FALSE),
                 (%s, 'protocols', 'Протоколы', FALSE)
+            ON CONFLICT DO NOTHING
         ''', (event_id, event_id, event_id, event_id, event_id))
         
         conn.commit()
+        
+        if submitted_by:
+            import requests
+            try:
+                event_number_html = f'<p><strong>Номер мероприятия:</strong> {event_number}</p>' if event_number else ''
+                email_data = {
+                    'to': submitted_by,
+                    'subject': f'Мероприятие одобрено: {title}',
+                    'html': f'''
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #2563eb;">Мероприятие одобрено!</h2>
+                        <p>Здравствуйте!</p>
+                        <p>Ваше мероприятие <strong>"{title}"</strong> успешно прошло модерацию и добавлено в календарь.</p>
+                        {event_number_html}
+                        <p><strong>Дата проведения:</strong> {event_date}</p>
+                        <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+                        <p style="color: #6b7280; font-size: 14px;">С уважением,<br>Администрация календаря спортивных мероприятий</p>
+                    </div>
+                    '''
+                }
+                requests.post(
+                    'https://functions.poehali.dev/380d99a9-f6a2-4057-b535-b0eeaf2e5574',
+                    json=email_data,
+                    timeout=5
+                )
+            except Exception as email_error:
+                print(f'Ошибка отправки письма: {str(email_error)}')
+        
         cur.close()
         conn.close()
         
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'success': True}),
+            'body': json.dumps({'success': True, 'event_number': event_number}),
             'isBase64Encoded': False
         }
     except Exception as e:
