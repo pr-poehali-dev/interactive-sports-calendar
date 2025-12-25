@@ -3321,48 +3321,6 @@ export default function Index() {
                 </CardContent>
               </Card>
 
-              {/* Легенда индикаторов документов */}
-              <Card className="mb-6 bg-gradient-to-br from-slate-50 to-slate-100">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Icon name="Info" size={20} className="text-blue-600" />
-                    Статус документов мероприятий
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-red-500">
-                      <div className="w-4 h-4 rounded-full bg-red-500 flex-shrink-0" />
-                      <div className="text-sm">
-                        <div className="font-semibold text-red-900">Критическая нехватка</div>
-                        <div className="text-gray-600">Не загружены основные документы</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-yellow-500">
-                      <div className="w-4 h-4 rounded-full bg-yellow-500 flex-shrink-0" />
-                      <div className="text-sm">
-                        <div className="font-semibold text-yellow-900">Требуются протоколы</div>
-                        <div className="text-gray-600">Основные документы загружены</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-blue-500">
-                      <div className="w-4 h-4 rounded-full bg-blue-500 flex-shrink-0" />
-                      <div className="text-sm">
-                        <div className="font-semibold text-blue-900">Требуются медиафайлы</div>
-                        <div className="text-gray-600">Все документы загружены</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-green-500">
-                      <div className="w-4 h-4 rounded-full bg-green-500 flex-shrink-0" />
-                      <div className="text-sm">
-                        <div className="font-semibold text-green-900">Полный комплект</div>
-                        <div className="text-gray-600">Все документы и медиа загружены</div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {selectedDate && (
                 <div className="animate-fade-in">
                   <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
@@ -3602,6 +3560,48 @@ export default function Index() {
                   )}
                 </div>
               )}
+
+              {/* Легенда индикаторов документов */}
+              <Card className="mb-6 bg-gradient-to-br from-slate-50 to-slate-100">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Icon name="Info" size={20} className="text-blue-600" />
+                    Статус документов мероприятий
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-red-500">
+                      <div className="w-4 h-4 rounded-full bg-red-500 flex-shrink-0" />
+                      <div className="text-sm">
+                        <div className="font-semibold text-red-900">Критическая нехватка</div>
+                        <div className="text-gray-600">Не загружены основные документы</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-yellow-500">
+                      <div className="w-4 h-4 rounded-full bg-yellow-500 flex-shrink-0" />
+                      <div className="text-sm">
+                        <div className="font-semibold text-yellow-900">Требуются протоколы</div>
+                        <div className="text-gray-600">Основные документы загружены</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-blue-500">
+                      <div className="w-4 h-4 rounded-full bg-blue-500 flex-shrink-0" />
+                      <div className="text-sm">
+                        <div className="font-semibold text-blue-900">Требуются медиафайлы</div>
+                        <div className="text-gray-600">Все документы загружены</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-4 border-green-500">
+                      <div className="w-4 h-4 rounded-full bg-green-500 flex-shrink-0" />
+                      <div className="text-sm">
+                        <div className="font-semibold text-green-900">Полный комплект</div>
+                        <div className="text-gray-600">Все документы и медиа загружены</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
               {!selectedDate && (
                 <Card className="text-center py-12 border-2 border-dashed">
