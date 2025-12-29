@@ -2488,6 +2488,11 @@ export default function Index() {
               alt="Мособлспорт"
               className="h-24 w-auto object-contain"
             />
+            <img 
+              src="https://cdn.poehali.dev/files/IMG_9203.jpg" 
+              alt="Спорт Истра"
+              className="h-24 w-auto object-contain"
+            />
           </div>
           <div className="flex items-center justify-center gap-3 mb-4">
             <Icon name="Trophy" size={48} className="text-yellow-500" />
