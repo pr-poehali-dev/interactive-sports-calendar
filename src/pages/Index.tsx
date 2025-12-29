@@ -3561,8 +3561,17 @@ export default function Index() {
                 </div>
               )}
 
+              {!selectedDate && (
+                <Card className="text-center py-12 border-2 border-dashed">
+                  <CardContent>
+                    <Icon name="MousePointerClick" size={48} className="mx-auto text-primary mb-4" />
+                    <p className="text-lg text-muted-foreground">Выберите дату в календаре, чтобы увидеть события</p>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Легенда индикаторов документов */}
-              <Card className="mb-6 bg-gradient-to-br from-slate-50 to-slate-100">
+              <Card className="mt-8 bg-gradient-to-br from-slate-50 to-slate-100">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Icon name="Info" size={20} className="text-blue-600" />
@@ -3602,15 +3611,6 @@ export default function Index() {
                   </div>
                 </CardContent>
               </Card>
-
-              {!selectedDate && (
-                <Card className="text-center py-12 border-2 border-dashed">
-                  <CardContent>
-                    <Icon name="MousePointerClick" size={48} className="mx-auto text-primary mb-4" />
-                    <p className="text-lg text-muted-foreground">Выберите дату в календаре, чтобы увидеть события</p>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </TabsContent>
 
