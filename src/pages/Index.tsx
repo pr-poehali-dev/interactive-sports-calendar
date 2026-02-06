@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
+import MediaUploader from '@/components/MediaUploader';
 
 type SportType = 'all' | 'football' | 'basketball' | 'running' | 'volleyball' | 'tennis' | 'hockey' | 'boxing' | 'wrestling' | 'judo' | 'karate' | 'taekwondo' | 'sambo' | 'gymnastics' | 'swimming' | 'athletics' | 'skiing' | 'biathlon' | 'figureskating' | 'speedskating' | 'chess' | 'badminton' | 'tabletennis' | 'cycling' | 'rowing' | 'shooting' | 'archery' | 'fencing' | 'weightlifting' | 'triathlon' | 'pentathlon' | 'handball' | 'waterpolo' | 'rugby' | 'baseball' | 'softball' | 'golf' | 'equestrian' | 'sailing' | 'surfing' | 'climbing' | 'skateboarding' | 'bmx' | 'mountainbike' | 'freestyleskiing' | 'snowboarding' | 'curling' | 'bobsleigh' | 'luge' | 'skeleton';
 
@@ -3848,6 +3849,19 @@ export default function Index() {
                             </div>
                           </div>
                         )}
+                        {event.media && event.media.length > 0 && (
+                          <div className="pt-4 border-t">
+                            <h3 className="font-semibold mb-3 flex items-center gap-2">
+                              <Icon name="Images" size={18} className="text-primary" />
+                              Фото и видео
+                            </h3>
+                            <MediaUploader 
+                              eventId={event.id} 
+                              existingMedia={event.media}
+                              isReadOnly={true}
+                            />
+                          </div>
+                        )}
                         {(isAdmin || (isLoggedIn && currentUser && event.submittedBy === currentUser.email)) && (
                           <div className="pt-4 border-t space-y-2">
                             {isLoggedIn && currentUser && event.submittedBy === currentUser.email && (
@@ -4134,41 +4148,11 @@ export default function Index() {
                               <Icon name="Images" size={18} className="text-primary" />
                               Фото и видео с мероприятия
                             </h3>
-                            <div className="grid grid-cols-4 gap-2">
-                              {event.media.map((item, i) => (
-                                <div 
-                                  key={i} 
-                                  className="relative group cursor-pointer"
-                                  onClick={() => {
-                                    setSelectedEvent(event);
-                                    setSelectedMediaIndex(i);
-                                    setIsMediaViewerOpen(true);
-                                  }}
-                                >
-                                  <div className="aspect-square bg-muted rounded-md flex items-center justify-center hover:bg-muted/80 transition-colors">
-                                    {item.type === 'image' ? (
-                                      <Icon name="Image" size={24} className="text-muted-foreground" />
-                                    ) : (
-                                      <Icon name="Video" size={24} className="text-muted-foreground" />
-                                    )}
-                                  </div>
-                                  {isAdmin && (
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const updatedMedia = event.media?.filter((_, index) => index !== i);
-                                        setEvents(events.map(ev => ev.id === event.id ? {...ev, media: updatedMedia} : ev));
-                                      }}
-                                    >
-                                      <Icon name="Trash2" size={14} />
-                                    </Button>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
+                            <MediaUploader 
+                              eventId={event.id} 
+                              existingMedia={event.media}
+                              isReadOnly={true}
+                            />
                           </div>
                         )}
                         
@@ -5227,70 +5211,20 @@ export default function Index() {
 
               {/* Upload Media Section */}
               <div className="pt-4 border-t">
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
                   <Icon name="ImagePlus" size={18} className="text-primary" />
-                  Загрузить фото и видео
+                  Фото и видео мероприятия
                 </h3>
-                <Input
-                  type="file"
-                  multiple
-                  accept="image/*,video/*"
-                  disabled={isUploading}
-                  onChange={async (e) => {
-                    const files = Array.from(e.target.files || []);
-                    if (files.length === 0) return;
-                    
-                    setIsUploading(true);
-                    const uploadedMedia: { type: 'image' | 'video'; url: string; name: string }[] = manageFilesEvent.media || [];
-                    
-                    try {
-                      for (const file of files) {
-                        const fileType = file.type.startsWith('image/') ? 'image' : 'video';
-                        const reader = new FileReader();
-                        const fileContent = await new Promise<string>((resolve) => {
-                          reader.onload = () => {
-                            const base64 = (reader.result as string).split(',')[1];
-                            resolve(base64);
-                          };
-                          reader.readAsDataURL(file);
-                        });
-                        
-                        const response = await fetch('https://functions.poehali.dev/d33abef9-76df-4869-9223-096e3c85c33f', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            fileName: file.name,
-                            fileContent: fileContent,
-                            fileType: fileType
-                          })
-                        });
-                        
-                        const result = await response.json();
-                        uploadedMedia.push({ type: fileType, url: result.url, name: file.name });
-                      }
-                      
-                      setEvents(events.map(e => e.id === manageFilesEvent.id ? {...e, media: uploadedMedia} : e));
-                      setManageFilesEvent({...manageFilesEvent, media: uploadedMedia});
-                      toast({
-                        title: "Медиа загружены",
-                        description: `Загружено ${files.length} файл(ов)`
-                      });
-                    } catch (error) {
-                      toast({
-                        title: "Ошибка загрузки",
-                        description: "Не удалось загрузить файлы",
-                        variant: "destructive"
-                      });
-                    } finally {
-                      setIsUploading(false);
-                      e.target.value = '';
-                    }
+                <MediaUploader
+                  eventId={manageFilesEvent.id}
+                  existingMedia={manageFilesEvent.media || []}
+                  onMediaUpdate={(updatedMedia) => {
+                    setEvents(events.map(e => e.id === manageFilesEvent.id ? {...e, media: updatedMedia} : e));
+                    setManageFilesEvent({...manageFilesEvent, media: updatedMedia});
+                    loadEvents();
                   }}
-                  className="cursor-pointer"
+                  isReadOnly={false}
                 />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {isUploading ? 'Загрузка медиафайлов...' : 'Фото и видео файлы (можно выбрать несколько)'}
-                </p>
               </div>
             </div>
           )}
