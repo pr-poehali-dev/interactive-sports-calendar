@@ -461,7 +461,7 @@ export default function Index() {
         .then(res => res.json())
         .then(data => {
           if (data.users) {
-            setUsers(data.users.map((u: any) => ({
+            setUsers(data.users.map((u: { id: number; email: string; name: string; phone?: string }) => ({
               id: u.id,
               email: u.email,
               name: u.name,
@@ -4057,7 +4057,10 @@ export default function Index() {
                       </Badge>
                       <Badge variant="outline">Завершено</Badge>
                     </div>
-                    <CardTitle className="text-xl leading-tight">{event.title}</CardTitle>
+                    <CardTitle className="text-xl leading-tight flex items-center gap-2">
+                      <span className="text-muted-foreground font-mono text-sm">#{event.id}</span>
+                      {event.title}
+                    </CardTitle>
                     <CardDescription className="flex flex-col gap-1 mt-2">
                       <div className="flex items-center gap-2">
                         <Icon name="Clock" size={16} />
