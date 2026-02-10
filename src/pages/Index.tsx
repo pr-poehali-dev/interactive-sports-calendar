@@ -1936,6 +1936,8 @@ export default function Index() {
         }
       }
       
+      await loadEvents();
+      
       setIsDeletingAllEvents(false);
       setIsDeleteAllEventsDialogOpen(false);
       setDeleteAllEventsPassword('');
