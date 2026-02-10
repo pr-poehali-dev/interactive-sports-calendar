@@ -21,7 +21,12 @@ interface MediaUploaderProps {
 export function MediaUploader({ eventId, existingMedia = [], onMediaUpdate, isReadOnly = false }: MediaUploaderProps) {
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>(existingMedia);
   const [isUploading, setIsUploading] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
   const { toast } = useToast();
+  
+  console.log(`[MediaUploader eventId=${eventId}] existingMedia:`, existingMedia);
+  console.log(`[MediaUploader eventId=${eventId}] mediaFiles:`, mediaFiles);
+  console.log(`[MediaUploader eventId=${eventId}] images count:`, mediaFiles.filter(f => f.type === 'image').length);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fileType: 'image' | 'video') => {
     const files = Array.from(e.target.files || []);
@@ -157,11 +162,21 @@ export function MediaUploader({ eventId, existingMedia = [], onMediaUpdate, isRe
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {images.map((media, i) => (
               <div key={i} className="relative group">
-                <img 
-                  src={media.url} 
-                  alt={media.name}
-                  className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
-                />
+                {imageErrors.has(i) ? (
+                  <div className="w-full h-32 bg-muted rounded-lg border-2 border-gray-200 flex items-center justify-center">
+                    <Icon name="ImageOff" size={32} className="text-muted-foreground" />
+                  </div>
+                ) : (
+                  <img 
+                    src={media.url} 
+                    alt={media.name}
+                    className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
+                    onError={() => {
+                      setImageErrors(prev => new Set(prev).add(i));
+                      console.error('Failed to load image:', media.url);
+                    }}
+                  />
+                )}
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all rounded-lg flex items-center justify-center gap-2">
                   <a 
                     href={media.url} 
