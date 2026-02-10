@@ -4057,7 +4057,12 @@ export default function Index() {
                       </Badge>
                       <Badge variant="outline">Завершено</Badge>
                     </div>
-                    <CardTitle className="text-xl leading-tight">{event.title}</CardTitle>
+                    <CardTitle className="text-xl leading-tight">
+                      {event.eventNumber && (
+                        <span className="text-primary font-mono text-sm mr-2">№{event.eventNumber}</span>
+                      )}
+                      {event.title}
+                    </CardTitle>
                     <CardDescription className="flex flex-col gap-1 mt-2">
                       <div className="flex items-center gap-2">
                         <Icon name="Clock" size={16} />
