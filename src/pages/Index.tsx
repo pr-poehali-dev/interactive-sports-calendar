@@ -949,8 +949,10 @@ export default function Index() {
         body: JSON.stringify(updateData)
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to update event');
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update event');
       }
       
       setIsEditDialogOpen(false);
@@ -972,6 +974,8 @@ export default function Index() {
       });
       setManualEventNumber('');
       setShowManualEventNumber(false);
+      
+      await loadEvents();
       
       toast({
         title: "Изменения сохранены",
