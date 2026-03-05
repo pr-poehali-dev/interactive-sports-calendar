@@ -529,7 +529,7 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
         event_date = body_data.get('date')
         event_number = body_data.get('event_number')
         
-        if approved and event_type == 'local' and event_level in ('municipal', 'intermunicipal') and not event_number:
+        if approved and not event_number:
             year = datetime.strptime(str(event_date), '%Y-%m-%d').year
             cur.execute('''
                 SELECT COUNT(*) FROM events 
