@@ -541,9 +541,10 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
         cur.execute('''
             INSERT INTO events (
                 event_number, title, date, time, location, event_type, 
-                event_level, sport, description, organizer, max_participants, 
+                event_level, sport, description, organizer, responsible_person,
+                responsible_position, responsible_phone, max_participants, 
                 max_spectators, participants, status, approved, submitted_by
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         ''', (
             event_number,
@@ -556,6 +557,9 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
             body_data.get('sport'),
             body_data.get('description'),
             body_data.get('organizer'),
+            body_data.get('responsible_person'),
+            body_data.get('responsible_position'),
+            body_data.get('responsible_phone'),
             body_data.get('max_participants', 50),
             body_data.get('max_spectators'),
             body_data.get('participants', 0),

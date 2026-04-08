@@ -42,6 +42,9 @@ interface Event {
   status: 'upcoming' | 'past';
   description: string;
   organizer: string;
+  responsiblePerson?: string;
+  responsiblePosition?: string;
+  responsiblePhone?: string;
   result?: string;
   approved: boolean;
   submittedAt: string;
@@ -507,6 +510,9 @@ export default function Index() {
           submittedAt: e.submitted_at,
           submittedBy: e.submitted_by,
           requiredDocuments: e.required_documents,
+          responsiblePerson: e.responsible_person,
+          responsiblePosition: e.responsible_position,
+          responsiblePhone: e.responsible_phone,
         }));
         setEvents(mapped);
       }
@@ -598,7 +604,7 @@ export default function Index() {
   };
 
   const handleAddEvent = () => {
-    if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.organizer || !newEvent.eventLevel) {
+    if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.organizer || !newEvent.eventLevel || !newEvent.responsiblePerson || !newEvent.responsiblePhone) {
       toast({
         title: "Ошибка",
         description: "Заполните все обязательные поля",
@@ -640,6 +646,9 @@ export default function Index() {
       sport: (showCustomSportInput ? 'all' : newEvent.sport) as SportType,
       description: newEvent.description || '',
       organizer: newEvent.organizer,
+      responsible_person: newEvent.responsiblePerson,
+      responsible_position: newEvent.responsiblePosition,
+      responsible_phone: newEvent.responsiblePhone,
       max_participants: newEvent.maxParticipants || 50,
       max_spectators: newEvent.maxSpectators,
       participants: 0,
@@ -710,6 +719,9 @@ export default function Index() {
       eventLevel: 'municipal',
       description: '',
       organizer: '',
+      responsiblePerson: '',
+      responsiblePosition: '',
+      responsiblePhone: '',
       maxParticipants: 50,
       maxSpectators: undefined,
       participants: 0,
@@ -2796,6 +2808,37 @@ export default function Index() {
                     onChange={(e) => setNewEvent({...newEvent, organizer: e.target.value})}
                     placeholder="Например: Спортивный клуб"
                   />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="responsiblePerson">ФИО ответственного за организацию *</Label>
+                  <Input
+                    id="responsiblePerson"
+                    value={newEvent.responsiblePerson || ''}
+                    onChange={(e) => setNewEvent({...newEvent, responsiblePerson: e.target.value})}
+                    placeholder="Иванов Иван Иванович"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="responsiblePosition">Должность</Label>
+                    <Input
+                      id="responsiblePosition"
+                      value={newEvent.responsiblePosition || ''}
+                      onChange={(e) => setNewEvent({...newEvent, responsiblePosition: e.target.value})}
+                      placeholder="Например: Директор"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="responsiblePhone">Телефон ответственного *</Label>
+                    <Input
+                      id="responsiblePhone"
+                      value={newEvent.responsiblePhone || ''}
+                      onChange={(e) => setNewEvent({...newEvent, responsiblePhone: e.target.value})}
+                      placeholder="+7 (900) 000-00-00"
+                    />
+                  </div>
                 </div>
                 
                 <div className="grid gap-2">
