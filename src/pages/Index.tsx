@@ -3488,6 +3488,18 @@ export default function Index() {
                                     <Icon name="Building" size={18} className="text-muted-foreground" />
                                     <strong>Организатор:</strong> {event.organizer}
                                   </div>
+                                  {event.responsiblePerson && (
+                                    <div className="flex items-center gap-2">
+                                      <Icon name="UserCheck" size={18} className="text-muted-foreground" />
+                                      <strong>Ответственный:</strong> {event.responsiblePerson}{event.responsiblePosition ? `, ${event.responsiblePosition}` : ''}
+                                    </div>
+                                  )}
+                                  {event.responsiblePhone && (
+                                    <div className="flex items-center gap-2">
+                                      <Icon name="Phone" size={18} className="text-muted-foreground" />
+                                      <strong>Телефон:</strong> {event.responsiblePhone}
+                                    </div>
+                                  )}
                                   <div className="pt-2">
                                     <p className="text-foreground">{event.description}</p>
                                   </div>
@@ -3889,6 +3901,18 @@ export default function Index() {
                               <Icon name="Building" size={18} className="text-muted-foreground" />
                               <strong>Организатор:</strong> {event.organizer}
                             </div>
+                            {event.responsiblePerson && (
+                              <div className="flex items-center gap-2">
+                                <Icon name="UserCheck" size={18} className="text-muted-foreground" />
+                                <strong>Ответственный:</strong> {event.responsiblePerson}{event.responsiblePosition ? `, ${event.responsiblePosition}` : ''}
+                              </div>
+                            )}
+                            {event.responsiblePhone && (
+                              <div className="flex items-center gap-2">
+                                <Icon name="Phone" size={18} className="text-muted-foreground" />
+                                <strong>Телефон:</strong> {event.responsiblePhone}
+                              </div>
+                            )}
                             <div className="pt-2">
                               <p className="text-foreground">{event.description}</p>
                             </div>
@@ -4199,6 +4223,18 @@ export default function Index() {
                               <Icon name="Building" size={18} className="text-muted-foreground" />
                               <strong>Организатор:</strong> {event.organizer}
                             </div>
+                            {event.responsiblePerson && (
+                              <div className="flex items-center gap-2">
+                                <Icon name="UserCheck" size={18} className="text-muted-foreground" />
+                                <strong>Ответственный:</strong> {event.responsiblePerson}{event.responsiblePosition ? `, ${event.responsiblePosition}` : ''}
+                              </div>
+                            )}
+                            {event.responsiblePhone && (
+                              <div className="flex items-center gap-2">
+                                <Icon name="Phone" size={18} className="text-muted-foreground" />
+                                <strong>Телефон:</strong> {event.responsiblePhone}
+                              </div>
+                            )}
                             <div className="pt-2">
                               <p className="text-foreground mb-3">{event.description}</p>
                             </div>
