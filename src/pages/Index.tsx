@@ -461,7 +461,7 @@ export default function Index() {
         .then(res => res.json())
         .then(data => {
           if (data.users) {
-            setUsers(data.users.map((u: any) => ({
+            setUsers(data.users.map((u: Record<string, unknown>) => ({
               id: u.id,
               email: u.email,
               name: u.name,
@@ -497,7 +497,18 @@ export default function Index() {
       const response = await fetch(url);
       const data = await response.json();
       if (data.events) {
-        setEvents(data.events);
+        const mapped = data.events.map((e: Record<string, unknown>) => ({
+          ...e,
+          eventNumber: e.event_number,
+          eventType: e.event_type,
+          eventLevel: e.event_level,
+          maxParticipants: e.max_participants,
+          maxSpectators: e.max_spectators,
+          submittedAt: e.submitted_at,
+          submittedBy: e.submitted_by,
+          requiredDocuments: e.required_documents,
+        }));
+        setEvents(mapped);
       }
     } catch (err) {
       console.error('Failed to load events:', err);
