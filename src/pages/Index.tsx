@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -601,6 +602,30 @@ export default function Index() {
         description: `Вы зарегистрированы на "${event.title}"`
       });
     }
+  };
+
+  const exportToExcel = (eventsToExport: Event[], filename: string) => {
+    const rows = eventsToExport.map((e) => ({
+      'Номер': e.eventNumber || '',
+      'Название': e.title,
+      'Дата': new Date(e.date).toLocaleDateString('ru-RU'),
+      'Время': e.time,
+      'Место проведения': e.location,
+      'Вид спорта': e.sport,
+      'Статус мероприятия': e.eventLevel || '',
+      'Тип': e.eventType === 'away' ? 'Выездное' : 'Местное',
+      'Организатор': e.organizer,
+      'ФИО ответственного': e.responsiblePerson || '',
+      'Должность': e.responsiblePosition || '',
+      'Телефон ответственного': e.responsiblePhone || '',
+      'Участников': e.participants,
+      'Макс. участников': e.maxParticipants,
+      'Описание': e.description,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Мероприятия');
+    XLSX.writeFile(wb, `${filename}.xlsx`);
   };
 
   const handleAddEvent = () => {
@@ -3740,10 +3765,21 @@ export default function Index() {
                 
                 {/* Фильтр по статусу документов */}
                 <div className="pt-4 border-t">
-                  <Label className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Icon name="Filter" size={16} />
-                    Фильтр по статусу
-                  </Label>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-semibold flex items-center gap-2">
+                      <Icon name="Filter" size={16} />
+                      Фильтр по статусу
+                    </Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportToExcel(upcomingEvents, 'Предстоящие_мероприятия')}
+                      className="flex items-center gap-2"
+                    >
+                      <Icon name="Download" size={14} />
+                      Экспорт в Excel
+                    </Button>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant={selectedDocStatus === 'all' ? 'default' : 'outline'}
@@ -4053,10 +4089,21 @@ export default function Index() {
                 
                 {/* Фильтр по статусу документов */}
                 <div className="pt-4 border-t">
-                  <Label className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Icon name="Filter" size={16} />
-                    Фильтр по статусу
-                  </Label>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-semibold flex items-center gap-2">
+                      <Icon name="Filter" size={16} />
+                      Фильтр по статусу
+                    </Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportToExcel(pastEvents, 'Прошедшие_мероприятия')}
+                      className="flex items-center gap-2"
+                    >
+                      <Icon name="Download" size={14} />
+                      Экспорт в Excel
+                    </Button>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant={selectedDocStatus === 'all' ? 'default' : 'outline'}
