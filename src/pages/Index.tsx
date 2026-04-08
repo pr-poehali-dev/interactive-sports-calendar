@@ -3780,6 +3780,12 @@ export default function Index() {
                       <Icon name="CalendarDays" size={20} className="text-muted-foreground" />
                     </div>
                     <CardTitle className="text-xl leading-tight">{event.title}</CardTitle>
+                    {event.eventNumber && (
+                      <div className="flex items-center gap-1 text-xs font-semibold text-primary mt-1">
+                        <Icon name="Hash" size={13} />
+                        {event.eventNumber}
+                      </div>
+                    )}
                     <CardDescription className="flex flex-col gap-1 mt-2">
                       <div className="flex items-center gap-2">
                         <Icon name="Clock" size={16} />
