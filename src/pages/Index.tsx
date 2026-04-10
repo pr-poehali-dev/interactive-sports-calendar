@@ -53,6 +53,7 @@ interface Event {
   documents?: { name: string; url: string }[];
   media?: { type: 'image' | 'video'; url: string; name: string }[];
   requiredDocuments?: RequiredDocument[];
+  additionalDates?: string[];
 }
 
 const eventLevelNames: Record<EventLevel, string> = {
@@ -456,8 +457,10 @@ export default function Index() {
     organizer: '',
     maxParticipants: 50,
     participants: 0,
-    status: 'upcoming'
+    status: 'upcoming',
+    additionalDates: []
   });
+  const [eventDaysCount, setEventDaysCount] = useState<number>(1);
 
   useEffect(() => {
     const loadUsers = () => {
@@ -750,8 +753,10 @@ export default function Index() {
       maxParticipants: 50,
       maxSpectators: undefined,
       participants: 0,
-      status: 'upcoming'
+      status: 'upcoming',
+      additionalDates: []
     });
+    setEventDaysCount(1);
     setCustomSport('');
     setShowCustomSportInput(false);
     setManualEventNumber('');
@@ -2037,7 +2042,7 @@ export default function Index() {
     
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dayEvents = upcomingEvents.filter(e => e.date === dateStr);
+      const dayEvents = upcomingEvents.filter(e => e.date === dateStr || (e.additionalDates || []).includes(dateStr));
       const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
       days.push({ date: day, hasEvents: dayEvents.length > 0, events: dayEvents, isToday });
     }
@@ -2615,12 +2620,25 @@ export default function Index() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="date">Дата *</Label>
+                    <Label htmlFor="date">Дата начала *</Label>
                     <Input
                       id="date"
                       type="date"
                       value={newEvent.date}
-                      onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
+                      onChange={(e) => {
+                        const newDate = e.target.value;
+                        if (eventDaysCount > 1 && newDate) {
+                          const base = new Date(newDate);
+                          const dates = Array.from({ length: eventDaysCount - 1 }, (_, i) => {
+                            const d = new Date(base);
+                            d.setDate(base.getDate() + i + 1);
+                            return d.toISOString().split('T')[0];
+                          });
+                          setNewEvent({ ...newEvent, date: newDate, additionalDates: dates });
+                        } else {
+                          setNewEvent({ ...newEvent, date: newDate });
+                        }
+                      }}
                     />
                   </div>
                   
@@ -2634,6 +2652,63 @@ export default function Index() {
                     />
                   </div>
                 </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="daysCount">Количество дней проведения</Label>
+                  <Input
+                    id="daysCount"
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={eventDaysCount}
+                    onChange={(e) => {
+                      const count = Math.max(1, parseInt(e.target.value) || 1);
+                      setEventDaysCount(count);
+                      if (count <= 1) {
+                        setNewEvent({ ...newEvent, additionalDates: [] });
+                      } else if (newEvent.date) {
+                        const base = new Date(newEvent.date);
+                        const dates = Array.from({ length: count - 1 }, (_, i) => {
+                          const d = new Date(base);
+                          d.setDate(base.getDate() + i + 1);
+                          return d.toISOString().split('T')[0];
+                        });
+                        setNewEvent({ ...newEvent, additionalDates: dates });
+                      } else {
+                        setNewEvent({ ...newEvent, additionalDates: Array(count - 1).fill('') });
+                      }
+                    }}
+                  />
+                </div>
+
+                {eventDaysCount > 1 && (
+                  <div className="grid gap-2">
+                    <Label>Даты проведения мероприятия</Label>
+                    <div className="bg-muted/40 rounded-lg p-3 grid gap-2">
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">1</span>
+                        <span className="font-medium">День 1 (основная дата):</span>
+                        <span className="text-muted-foreground">{newEvent.date ? new Date(newEvent.date + 'T00:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}</span>
+                      </div>
+                      {Array.from({ length: eventDaysCount - 1 }, (_, i) => (
+                        <div key={i} className="flex items-center gap-3">
+                          <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">{i + 2}</span>
+                          <span className="text-sm font-medium whitespace-nowrap">День {i + 2}:</span>
+                          <Input
+                            type="date"
+                            value={(newEvent.additionalDates || [])[i] || ''}
+                            onChange={(e) => {
+                              const dates = [...(newEvent.additionalDates || [])];
+                              dates[i] = e.target.value;
+                              setNewEvent({ ...newEvent, additionalDates: dates });
+                            }}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 <div className="grid gap-2">
                   <Label htmlFor="location">Место проведения *</Label>
@@ -3424,7 +3499,7 @@ export default function Index() {
                     События на {new Date(selectedDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
                   </h3>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {upcomingEvents.filter(e => e.date === selectedDate).map((event) => {
+                    {upcomingEvents.filter(e => e.date === selectedDate || (e.additionalDates || []).includes(selectedDate)).map((event) => {
                       const docStatus = event.approved ? getDocumentStatus(event) : null;
                       const statusColors = {
                         red: 'bg-red-500',
