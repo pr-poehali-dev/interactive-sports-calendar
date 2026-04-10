@@ -3580,6 +3580,21 @@ export default function Index() {
                                     <Icon name="Calendar" size={18} className="text-primary" />
                                     <strong>Дата:</strong> {new Date(event.date).toLocaleDateString('ru-RU')} в {event.time}
                                   </div>
+                                  {event.additionalDates && event.additionalDates.length > 0 && (
+                                    <div className="flex items-start gap-2">
+                                      <Icon name="CalendarDays" size={18} className="text-primary mt-0.5" />
+                                      <div>
+                                        <strong>Все даты ({event.additionalDates.length + 1} дн.):</strong>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          {[event.date, ...event.additionalDates].map((d, i) => (
+                                            <span key={i} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                              {new Date(d).toLocaleDateString('ru-RU')}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                   <div className="flex items-center gap-2">
                                     <Icon name="MapPin" size={18} className="text-secondary" />
                                     <strong>Место:</strong> {event.location}
@@ -3956,6 +3971,11 @@ export default function Index() {
                       <div className="flex items-center gap-2">
                         <Icon name="Clock" size={16} />
                         {new Date(event.date).toLocaleDateString('ru-RU')} в {event.time}
+                        {event.additionalDates && event.additionalDates.length > 0 && (
+                          <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
+                            {event.additionalDates.length + 1} дн.
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <Icon name="MapPin" size={16} />
@@ -4003,6 +4023,21 @@ export default function Index() {
                               <Icon name="Calendar" size={18} className="text-primary" />
                               <strong>Дата:</strong> {new Date(event.date).toLocaleDateString('ru-RU')} в {event.time}
                             </div>
+                            {event.additionalDates && event.additionalDates.length > 0 && (
+                              <div className="flex items-start gap-2">
+                                <Icon name="CalendarDays" size={18} className="text-primary mt-0.5" />
+                                <div>
+                                  <strong>Все даты ({event.additionalDates.length + 1} дн.):</strong>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {[event.date, ...event.additionalDates].map((d, i) => (
+                                      <span key={i} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                        {new Date(d).toLocaleDateString('ru-RU')}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                             <div className="flex items-center gap-2">
                               <Icon name="MapPin" size={18} className="text-secondary" />
                               <strong>Место:</strong> {event.location}
@@ -4280,6 +4315,11 @@ export default function Index() {
                       <div className="flex items-center gap-2">
                         <Icon name="Clock" size={16} />
                         {new Date(event.date).toLocaleDateString('ru-RU')}
+                        {event.additionalDates && event.additionalDates.length > 0 && (
+                          <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
+                            {event.additionalDates.length + 1} дн.
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <Icon name="MapPin" size={16} />
@@ -4333,6 +4373,21 @@ export default function Index() {
                               <Icon name="Calendar" size={18} className="text-primary" />
                               <strong>Дата:</strong> {new Date(event.date).toLocaleDateString('ru-RU')}
                             </div>
+                            {event.additionalDates && event.additionalDates.length > 0 && (
+                              <div className="flex items-start gap-2">
+                                <Icon name="CalendarDays" size={18} className="text-primary mt-0.5" />
+                                <div>
+                                  <strong>Все даты ({event.additionalDates.length + 1} дн.):</strong>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {[event.date, ...event.additionalDates].map((d, i) => (
+                                      <span key={i} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                        {new Date(d).toLocaleDateString('ru-RU')}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                             <div className="flex items-center gap-2">
                               <Icon name="MapPin" size={18} className="text-secondary" />
                               <strong>Место:</strong> {event.location}
