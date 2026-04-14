@@ -3455,6 +3455,17 @@ export default function Index() {
                               </div>
                             </div>
                           )}
+                          {unreportedEvents.length > 0 && (
+                            <div className="mt-3 space-y-1">
+                              <div className="text-xs font-medium text-slate-600 mb-1.5">Ожидают внесения итогов:</div>
+                              {unreportedEvents.map(e => (
+                                <div key={e.id} className="flex items-center justify-between text-xs bg-white border border-orange-200 rounded-md px-2 py-1.5 gap-2">
+                                  <span className="text-slate-700 truncate flex-1">{e.title}</span>
+                                  <span className="text-slate-400 shrink-0">{new Date(e.date).toLocaleDateString('ru-RU')}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
 
                         {maxEvent && maxParticipants > 0 && (
