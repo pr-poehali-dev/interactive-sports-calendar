@@ -547,16 +547,18 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
             event_number = f'МО-{year}-{str(approved_count + 1).zfill(3)}'
         
         additional_dates_raw = body_data.get('additional_dates', []) or []
-        additional_dates = [d for d in additional_dates_raw if d] if additional_dates_raw else None
+        additional_dates_list = [d for d in additional_dates_raw if d]
+        additional_dates = additional_dates_list if additional_dates_list else None
+        additional_dates_sql = "ARRAY[" + ",".join(f"'{d}'::date" for d in additional_dates_list) + "]::date[]" if additional_dates_list else "NULL::date[]"
 
-        cur.execute('''
+        cur.execute(f'''
             INSERT INTO events (
                 event_number, title, date, time, location, event_type, 
                 event_level, sport, description, organizer, responsible_person,
                 responsible_position, responsible_phone, max_participants, 
                 max_spectators, participants, status, approved, submitted_by,
                 additional_dates
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, {additional_dates_sql})
             RETURNING id
         ''', (
             event_number,
@@ -577,8 +579,7 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
             body_data.get('participants', 0),
             body_data.get('status', 'upcoming'),
             approved,
-            body_data.get('submitted_by'),
-            additional_dates
+            body_data.get('submitted_by')
         ))
         
         event_id = cur.fetchone()[0]
