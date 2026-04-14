@@ -500,10 +500,18 @@ def handle_list_events(event: Dict[str, Any]) -> Dict[str, Any]:
         cur.close()
         conn.close()
         
+        def serialize_event(e):
+            d = dict(e)
+            if d.get('additional_dates'):
+                d['additional_dates'] = [str(dt) for dt in d['additional_dates']]
+            else:
+                d['additional_dates'] = []
+            return d
+
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'events': [dict(e) for e in events]}, default=str),
+            'body': json.dumps({'events': [serialize_event(e) for e in events]}, default=str),
             'isBase64Encoded': False
         }
     except Exception as e:
@@ -538,13 +546,17 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
             approved_count = cur.fetchone()[0]
             event_number = f'МО-{year}-{str(approved_count + 1).zfill(3)}'
         
+        additional_dates_raw = body_data.get('additional_dates', []) or []
+        additional_dates = [d for d in additional_dates_raw if d] if additional_dates_raw else None
+
         cur.execute('''
             INSERT INTO events (
                 event_number, title, date, time, location, event_type, 
                 event_level, sport, description, organizer, responsible_person,
                 responsible_position, responsible_phone, max_participants, 
-                max_spectators, participants, status, approved, submitted_by
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                max_spectators, participants, status, approved, submitted_by,
+                additional_dates
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         ''', (
             event_number,
@@ -565,7 +577,8 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
             body_data.get('participants', 0),
             body_data.get('status', 'upcoming'),
             approved,
-            body_data.get('submitted_by')
+            body_data.get('submitted_by'),
+            additional_dates
         ))
         
         event_id = cur.fetchone()[0]

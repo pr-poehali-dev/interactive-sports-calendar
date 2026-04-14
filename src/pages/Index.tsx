@@ -517,6 +517,7 @@ export default function Index() {
           responsiblePerson: e.responsible_person,
           responsiblePosition: e.responsible_position,
           responsiblePhone: e.responsible_phone,
+          additionalDates: (e.additional_dates as string[]) || [],
         }));
         setEvents(mapped);
       }
@@ -682,7 +683,8 @@ export default function Index() {
       participants: 0,
       status: 'upcoming',
       approved: isAdmin,
-      submitted_by: currentUser?.email
+      submitted_by: currentUser?.email,
+      additional_dates: (newEvent.additionalDates || []).filter(d => d)
     };
     
     console.log('Отправка мероприятия:', eventData);
