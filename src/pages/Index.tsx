@@ -47,6 +47,9 @@ interface Event {
   responsiblePosition?: string;
   responsiblePhone?: string;
   result?: string;
+  actualParticipants?: number;
+  actualSpectators?: number;
+  actualComment?: string;
   approved: boolean;
   submittedAt: string;
   submittedBy?: string;
@@ -388,6 +391,12 @@ export default function Index() {
   const [broadcastSubject, setBroadcastSubject] = useState<string>('');
   const [broadcastBody, setBroadcastBody] = useState<string>('');
   const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [reportEvent, setReportEvent] = useState<Event | null>(null);
+  const [reportActualParticipants, setReportActualParticipants] = useState<string>('');
+  const [reportActualSpectators, setReportActualSpectators] = useState<string>('');
+  const [reportActualComment, setReportActualComment] = useState<string>('');
+  const [isSavingReport, setIsSavingReport] = useState(false);
   const [isDeleteAllEventsDialogOpen, setIsDeleteAllEventsDialogOpen] = useState(false);
   const [deleteAllEventsPassword, setDeleteAllEventsPassword] = useState('');
   const [isDeletingAllEvents, setIsDeletingAllEvents] = useState(false);
@@ -518,6 +527,9 @@ export default function Index() {
           responsiblePosition: e.responsible_position,
           responsiblePhone: e.responsible_phone,
           additionalDates: (e.additional_dates as string[]) || [],
+          actualParticipants: e.actual_participants as number | undefined,
+          actualSpectators: e.actual_spectators as number | undefined,
+          actualComment: e.actual_comment as string | undefined,
         }));
         setEvents(mapped);
       }
@@ -1045,6 +1057,43 @@ export default function Index() {
     }
   };
   
+  const handleOpenReport = (event: Event) => {
+    setReportEvent(event);
+    setReportActualParticipants(event.actualParticipants != null ? String(event.actualParticipants) : '');
+    setReportActualSpectators(event.actualSpectators != null ? String(event.actualSpectators) : '');
+    setReportActualComment(event.actualComment || '');
+    setIsReportDialogOpen(true);
+  };
+
+  const handleSaveReport = async () => {
+    if (!reportEvent) return;
+    setIsSavingReport(true);
+    try {
+      const response = await fetch(
+        `https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=report&event_id=${reportEvent.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            actual_participants: reportActualParticipants !== '' ? Number(reportActualParticipants) : null,
+            actual_spectators: reportActualSpectators !== '' ? Number(reportActualSpectators) : null,
+            actual_comment: reportActualComment || null,
+          }),
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || 'error');
+      setIsReportDialogOpen(false);
+      setReportEvent(null);
+      await loadEvents();
+      toast({ title: 'Итоги сохранены', description: `Данные по мероприятию обновлены` });
+    } catch {
+      toast({ title: 'Ошибка', description: 'Не удалось сохранить итоги', variant: 'destructive' });
+    } finally {
+      setIsSavingReport(false);
+    }
+  };
+
   const handleAdminLogin = async () => {
     if (adminPassword === storedAdminPassword) {
       setIsAdmin(true);
@@ -4635,8 +4684,34 @@ export default function Index() {
                             </p>
                           </div>
                         )}
+                        {(isAdmin || (isLoggedIn && currentUser?.email === event.submittedBy)) && (
+                          <div className="pt-4 border-t">
+                            <Button
+                              variant="default"
+                              className="w-full mb-2"
+                              onClick={() => handleOpenReport(event)}
+                            >
+                              <Icon name="ClipboardCheck" size={16} className="mr-2" />
+                              Внести итоги мероприятия
+                            </Button>
+                            {event.actualParticipants != null || event.actualSpectators != null || event.actualComment ? (
+                              <div className="rounded-md bg-muted p-3 text-sm space-y-1 mb-2">
+                                <p className="font-medium text-foreground">Фактические итоги:</p>
+                                {event.actualParticipants != null && (
+                                  <p>Участников: <span className="font-medium">{event.actualParticipants}</span></p>
+                                )}
+                                {event.actualSpectators != null && (
+                                  <p>Зрителей: <span className="font-medium">{event.actualSpectators}</span></p>
+                                )}
+                                {event.actualComment && (
+                                  <p>Комментарий: <span className="font-medium">{event.actualComment}</span></p>
+                                )}
+                              </div>
+                            ) : null}
+                          </div>
+                        )}
                         {isAdmin && (
-                          <div className="pt-4 border-t flex gap-2">
+                          <div className="pt-2 border-t flex gap-2">
                             <Button 
                               variant="outline" 
                               className="flex-1"
@@ -5725,6 +5800,63 @@ export default function Index() {
         </DialogContent>
       </Dialog>
       
+      {/* Report Dialog */}
+      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="ClipboardCheck" size={20} className="text-primary" />
+              Итоги мероприятия
+            </DialogTitle>
+            {reportEvent && (
+              <DialogDescription>{reportEvent.title} · {new Date(reportEvent.date).toLocaleDateString('ru-RU')}</DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Фактическое количество участников</label>
+              <input
+                type="number"
+                min="0"
+                className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+                placeholder="Введите число"
+                value={reportActualParticipants}
+                onChange={e => setReportActualParticipants(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Фактическое количество зрителей</label>
+              <input
+                type="number"
+                min="0"
+                className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+                placeholder="Введите число"
+                value={reportActualSpectators}
+                onChange={e => setReportActualSpectators(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Комментарий о проведённом мероприятии</label>
+              <textarea
+                className="w-full border rounded-md px-3 py-2 text-sm bg-background resize-none"
+                placeholder="Краткое описание результатов, особенностей проведения..."
+                rows={4}
+                value={reportActualComment}
+                onChange={e => setReportActualComment(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setIsReportDialogOpen(false)}>
+              Отмена
+            </Button>
+            <Button className="flex-1" onClick={handleSaveReport} disabled={isSavingReport}>
+              {isSavingReport ? 'Сохранение...' : 'Сохранить итоги'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete All Events Dialog */}
       <Dialog open={isDeleteAllEventsDialogOpen} onOpenChange={setIsDeleteAllEventsDialogOpen}>
         <DialogContent className="max-w-md">

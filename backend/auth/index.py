@@ -38,6 +38,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 return handle_approve_event(event)
             elif path == 'update':
                 return handle_update_event(event)
+            elif path == 'report':
+                return handle_report_event(event)
         elif method == 'DELETE':
             return handle_delete_event(event)
     
@@ -802,6 +804,58 @@ def handle_update_event(event: Dict[str, Any]) -> Dict[str, Any]:
             'body': json.dumps({'error': f'Ошибка обновления события: {str(e)}'}),
             'isBase64Encoded': False
         }
+
+def handle_report_event(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Сохранить фактические итоги прошедшего мероприятия (участники, зрители, комментарий)."""
+    params = event.get('queryStringParameters', {}) or {}
+    event_id = params.get('event_id')
+    body_data = json.loads(event.get('body', '{}'))
+
+    if not event_id:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'event_id обязателен'}),
+            'isBase64Encoded': False
+        }
+
+    try:
+        import psycopg2
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+        cur = conn.cursor()
+
+        cur.execute('''
+            UPDATE events SET
+                actual_participants = %s,
+                actual_spectators = %s,
+                actual_comment = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        ''', (
+            body_data.get('actual_participants'),
+            body_data.get('actual_spectators'),
+            body_data.get('actual_comment'),
+            event_id
+        ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'success': True}),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Ошибка сохранения итогов: {str(e)}'}),
+            'isBase64Encoded': False
+        }
+
 
 def handle_delete_event(event: Dict[str, Any]) -> Dict[str, Any]:
     params = event.get('queryStringParameters', {}) or {}
