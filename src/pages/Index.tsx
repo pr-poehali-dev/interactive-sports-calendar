@@ -3391,10 +3391,11 @@ export default function Index() {
               <CardContent>
                 <div className="space-y-4">
                   {(() => {
+                    const reportedEvents = pastEvents.filter(e => e.actualParticipants != null);
+                    const unreportedEvents = pastEvents.filter(e => e.actualParticipants == null);
                     const totalParticipants = pastEvents.reduce((sum, event) => sum + (event.actualParticipants ?? event.participants ?? 0), 0);
-                    const eventsWithParticipants = pastEvents.filter(e => (e.actualParticipants ?? e.participants ?? 0) > 0);
-                    const avgParticipants = eventsWithParticipants.length > 0 
-                      ? Math.round(totalParticipants / eventsWithParticipants.length) 
+                    const avgParticipants = reportedEvents.length > 0
+                      ? Math.round(reportedEvents.reduce((sum, e) => sum + (e.actualParticipants ?? 0), 0) / reportedEvents.length)
                       : 0;
                     const maxParticipants = Math.max(...pastEvents.map(e => e.actualParticipants ?? e.participants ?? 0), 0);
                     const maxEvent = pastEvents.find(e => (e.actualParticipants ?? e.participants ?? 0) === maxParticipants);
@@ -3412,7 +3413,7 @@ export default function Index() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg">
                           <div className="flex items-center gap-3">
                             <div className="p-2 bg-green-500 rounded-lg">
@@ -3424,7 +3425,38 @@ export default function Index() {
                             </div>
                           </div>
                         </div>
-                        
+
+                        <div className="p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Icon name="ClipboardCheck" size={16} className="text-slate-600" />
+                            <span className="text-sm font-medium text-slate-700">Внесение итогов</span>
+                          </div>
+                          <div className="flex gap-3">
+                            <div className="flex-1 text-center p-2 bg-green-100 rounded-lg">
+                              <div className="text-xl font-bold text-green-700">{reportedEvents.length}</div>
+                              <div className="text-xs text-green-600 mt-0.5">итоги внесены</div>
+                            </div>
+                            <div className="flex-1 text-center p-2 bg-orange-100 rounded-lg">
+                              <div className="text-xl font-bold text-orange-700">{unreportedEvents.length}</div>
+                              <div className="text-xs text-orange-600 mt-0.5">ожидают внесения</div>
+                            </div>
+                          </div>
+                          {pastEvents.length > 0 && (
+                            <div className="mt-2">
+                              <div className="flex justify-between text-xs text-slate-500 mb-1">
+                                <span>Заполнено</span>
+                                <span>{Math.round(reportedEvents.length / pastEvents.length * 100)}%</span>
+                              </div>
+                              <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-green-500 rounded-full transition-all"
+                                  style={{ width: `${Math.round(reportedEvents.length / pastEvents.length * 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
                         {maxEvent && maxParticipants > 0 && (
                           <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
