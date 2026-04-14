@@ -3391,13 +3391,13 @@ export default function Index() {
               <CardContent>
                 <div className="space-y-4">
                   {(() => {
-                    const totalParticipants = pastEvents.reduce((sum, event) => sum + (event.participants || 0), 0);
-                    const eventsWithParticipants = pastEvents.filter(e => e.participants && e.participants > 0);
+                    const totalParticipants = pastEvents.reduce((sum, event) => sum + (event.actualParticipants ?? event.participants ?? 0), 0);
+                    const eventsWithParticipants = pastEvents.filter(e => (e.actualParticipants ?? e.participants ?? 0) > 0);
                     const avgParticipants = eventsWithParticipants.length > 0 
                       ? Math.round(totalParticipants / eventsWithParticipants.length) 
                       : 0;
-                    const maxParticipants = Math.max(...pastEvents.map(e => e.participants || 0), 0);
-                    const maxEvent = pastEvents.find(e => e.participants === maxParticipants);
+                    const maxParticipants = Math.max(...pastEvents.map(e => e.actualParticipants ?? e.participants ?? 0), 0);
+                    const maxEvent = pastEvents.find(e => (e.actualParticipants ?? e.participants ?? 0) === maxParticipants);
                     
                     return (
                       <>
