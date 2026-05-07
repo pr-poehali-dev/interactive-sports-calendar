@@ -935,10 +935,13 @@ def handle_save_files(event: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_report_event(event: Dict[str, Any]) -> Dict[str, Any]:
-    """Сохранить фактические итоги прошедшего мероприятия (участники, зрители, комментарий)."""
+    """Сохранить фактические итоги мероприятия. Разрешено создателю или администратору."""
     params = event.get('queryStringParameters', {}) or {}
     event_id = params.get('event_id')
     body_data = json.loads(event.get('body', '{}'))
+
+    requester_email = body_data.get('requester_email')
+    is_admin = body_data.get('is_admin', False)
 
     if not event_id:
         return {
@@ -953,13 +956,36 @@ def handle_report_event(event: Dict[str, Any]) -> Dict[str, Any]:
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
         cur = conn.cursor()
 
+        cur.execute('SELECT submitted_by FROM events WHERE id = %s::integer', (event_id,))
+        row = cur.fetchone()
+        if not row:
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Мероприятие не найдено'}),
+                'isBase64Encoded': False
+            }
+
+        submitted_by = row[0]
+        if not is_admin and (not requester_email or requester_email != submitted_by):
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 403,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Нет прав для внесения итогов этого мероприятия'}),
+                'isBase64Encoded': False
+            }
+
         cur.execute('''
             UPDATE events SET
                 actual_participants = %s,
                 actual_spectators = %s,
                 actual_comment = %s,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = %s
+            WHERE id = %s::integer
         ''', (
             body_data.get('actual_participants'),
             body_data.get('actual_spectators'),

@@ -1106,6 +1106,8 @@ export default function Index() {
             actual_participants: reportActualParticipants !== '' ? Number(reportActualParticipants) : null,
             actual_spectators: reportActualSpectators !== '' ? Number(reportActualSpectators) : null,
             actual_comment: reportActualComment || null,
+            requester_email: currentUser?.email || null,
+            is_admin: isAdmin,
           }),
         }
       );

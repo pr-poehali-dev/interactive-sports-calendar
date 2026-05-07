@@ -66,9 +66,20 @@
         "is_admin": false
       },
       "expectedStatus": 404,
-      "expectedBody": {
-        "error": "string"
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Report event - not found",
+      "method": "PUT",
+      "path": "/?resource=events&action=report&event_id=99999",
+      "body": {
+        "actual_participants": 10,
+        "requester_email": "unknown@test.com",
+        "is_admin": false
       },
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
     }
   ]
