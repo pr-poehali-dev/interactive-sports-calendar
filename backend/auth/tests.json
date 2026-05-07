@@ -40,6 +40,21 @@
         }
       },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Update event - forbidden for non-owner",
+      "method": "PUT",
+      "path": "/?resource=events&action=update&event_id=99999",
+      "body": {
+        "title": "Test",
+        "requester_email": "unknown@test.com",
+        "is_admin": false
+      },
+      "expectedStatus": 404,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
     }
   ]
 }

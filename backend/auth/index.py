@@ -732,10 +732,14 @@ def handle_approve_event(event: Dict[str, Any]) -> Dict[str, Any]:
         }
 
 def handle_update_event(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Обновить мероприятие. Разрешено создателю мероприятия или администратору."""
     params = event.get('queryStringParameters', {}) or {}
     event_id = params.get('event_id')
     body_data = json.loads(event.get('body', '{}'))
-    
+
+    requester_email = body_data.get('requester_email')
+    is_admin = body_data.get('is_admin', False)
+
     if not event_id:
         return {
             'statusCode': 400,
@@ -743,12 +747,35 @@ def handle_update_event(event: Dict[str, Any]) -> Dict[str, Any]:
             'body': json.dumps({'error': 'event_id обязателен'}),
             'isBase64Encoded': False
         }
-    
+
     try:
         import psycopg2
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
         cur = conn.cursor()
-        
+
+        cur.execute('SELECT submitted_by FROM events WHERE id = %s::integer', (event_id,))
+        row = cur.fetchone()
+        if not row:
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Мероприятие не найдено'}),
+                'isBase64Encoded': False
+            }
+
+        submitted_by = row[0]
+        if not is_admin and (not requester_email or requester_email != submitted_by):
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 403,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Нет прав для редактирования этого мероприятия'}),
+                'isBase64Encoded': False
+            }
+
         cur.execute('''
             UPDATE events SET
                 event_number = %s,
@@ -786,11 +813,11 @@ def handle_update_event(event: Dict[str, Any]) -> Dict[str, Any]:
             body_data.get('result'),
             event_id
         ))
-        
+
         conn.commit()
         cur.close()
         conn.close()
-        
+
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},

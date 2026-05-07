@@ -1006,7 +1006,9 @@ export default function Index() {
       max_participants: newEvent.maxParticipants || 50,
       max_spectators: newEvent.maxSpectators,
       status: newEvent.status,
-      participants: editingEvent.participants
+      participants: editingEvent.participants,
+      requester_email: currentUser?.email || null,
+      is_admin: isAdmin
     };
     
     try {
@@ -4195,17 +4197,31 @@ export default function Index() {
                         {(isAdmin || (isLoggedIn && currentUser && event.submittedBy === currentUser.email)) && (
                           <div className="pt-4 border-t space-y-2">
                             {isLoggedIn && currentUser && event.submittedBy === currentUser.email && (
-                              <Button 
-                                variant="default" 
-                                className="w-full bg-blue-600 hover:bg-blue-700"
-                                onClick={() => {
-                                  setManageFilesEvent(event);
-                                  setIsManageFilesDialogOpen(true);
-                                }}
-                              >
-                                <Icon name="Upload" size={16} className="mr-2" />
-                                Управление файлами
-                              </Button>
+                              <div className="space-y-2">
+                                <div className="flex gap-2">
+                                  <Button 
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => {
+                                      handleEditEvent(event);
+                                    }}
+                                  >
+                                    <Icon name="Edit" size={16} className="mr-2" />
+                                    Редактировать
+                                  </Button>
+                                  <Button 
+                                    variant="default" 
+                                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                    onClick={() => {
+                                      setManageFilesEvent(event);
+                                      setIsManageFilesDialogOpen(true);
+                                    }}
+                                  >
+                                    <Icon name="Upload" size={16} className="mr-2" />
+                                    Файлы и медиа
+                                  </Button>
+                                </div>
+                              </div>
                             )}
                             {isAdmin && (
                               <>
@@ -4227,6 +4243,17 @@ export default function Index() {
                                   >
                                     <Icon name="Edit" size={16} className="mr-2" />
                                     Редактировать
+                                  </Button>
+                                  <Button
+                                    variant="default"
+                                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                    onClick={() => {
+                                      setManageFilesEvent(event);
+                                      setIsManageFilesDialogOpen(true);
+                                    }}
+                                  >
+                                    <Icon name="Upload" size={16} className="mr-2" />
+                                    Файлы и медиа
                                   </Button>
                                   <Button 
                                     variant="destructive" 
