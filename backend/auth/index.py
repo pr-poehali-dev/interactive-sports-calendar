@@ -43,6 +43,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             elif path == 'save-files':
                 return handle_save_files(event)
         elif method == 'DELETE':
+            if path == 'delete-file':
+                return handle_delete_file(event)
             return handle_delete_event(event)
     
     if method == 'GET':
@@ -879,25 +881,7 @@ def handle_save_files(event: Dict[str, Any]) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
 
-        documents = body_data.get('documents')
-        media = body_data.get('media')
         required_documents = body_data.get('required_documents')
-
-        if documents is not None:
-            cur.execute('DELETE FROM event_documents WHERE event_id = %s::integer', (event_id,))
-            for doc in documents:
-                cur.execute(
-                    'INSERT INTO event_documents (event_id, name, url) VALUES (%s::integer, %s, %s)',
-                    (event_id, doc.get('name'), doc.get('url'))
-                )
-
-        if media is not None:
-            cur.execute('DELETE FROM event_media WHERE event_id = %s::integer', (event_id,))
-            for item in media:
-                cur.execute(
-                    'INSERT INTO event_media (event_id, type, name, url) VALUES (%s::integer, %s, %s, %s)',
-                    (event_id, item.get('type'), item.get('name'), item.get('url'))
-                )
 
         if required_documents is not None:
             for doc in required_documents:
@@ -1049,5 +1033,73 @@ def handle_delete_event(event: Dict[str, Any]) -> Dict[str, Any]:
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
             'body': json.dumps({'error': f'Ошибка удаления события: {str(e)}'}),
+            'isBase64Encoded': False
+        }
+
+
+def handle_delete_file(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Удалить отдельный файл (документ или медиа) из БД по URL."""
+    params = event.get('queryStringParameters', {}) or {}
+    event_id = params.get('event_id')
+    body_data = json.loads(event.get('body', '{}'))
+
+    file_url = body_data.get('url')
+    file_table = body_data.get('table')  # 'documents' или 'media'
+    requester_email = body_data.get('requester_email')
+    is_admin = body_data.get('is_admin', False)
+
+    if not event_id or not file_url or file_table not in ('documents', 'media'):
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'event_id, url и table (documents|media) обязательны'}),
+            'isBase64Encoded': False
+        }
+
+    try:
+        import psycopg2
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+        cur = conn.cursor()
+
+        cur.execute('SELECT submitted_by FROM events WHERE id = %s::integer', (event_id,))
+        row = cur.fetchone()
+        if not row:
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Мероприятие не найдено'}),
+                'isBase64Encoded': False
+            }
+
+        submitted_by = row[0]
+        if not is_admin and (not requester_email or requester_email != submitted_by):
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 403,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Нет прав для удаления файла'}),
+                'isBase64Encoded': False
+            }
+
+        table_name = f'event_{file_table}'
+        cur.execute(f'DELETE FROM {table_name} WHERE event_id = %s::integer AND url = %s', (event_id, file_url))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'success': True}),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Ошибка удаления файла: {str(e)}'}),
             'isBase64Encoded': False
         }

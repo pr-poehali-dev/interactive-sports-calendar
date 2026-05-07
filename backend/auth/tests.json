@@ -81,6 +81,19 @@
       "expectedStatus": 404,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Delete file - bad request",
+      "method": "DELETE",
+      "path": "/?resource=events&action=delete-file&event_id=1",
+      "body": {
+        "url": "",
+        "table": "wrong",
+        "is_admin": false
+      },
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
     }
   ]
 }

@@ -978,8 +978,6 @@ export default function Index() {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            documents: eventData.documents || [],
-            media: eventData.media || [],
             required_documents: eventData.requiredDocuments || [],
             requester_email: currentUser?.email || null,
             is_admin: isAdmin
@@ -989,7 +987,7 @@ export default function Index() {
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || 'Ошибка сохранения');
       await loadEvents();
-      toast({ title: 'Файлы сохранены', description: 'Изменения успешно записаны' });
+      toast({ title: 'Изменения сохранены', description: 'Данные мероприятия обновлены' });
     } catch (error) {
       toast({ title: 'Ошибка', description: `${error}`, variant: 'destructive' });
     }
@@ -5441,9 +5439,13 @@ export default function Index() {
                                     idx === i ? { ...d, uploaded: false, url: undefined, fileName: undefined } : d
                                   );
                                   setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, requiredDocuments: updatedRequiredDocs} : ev));
-                                  const updatedEvent = {...manageFilesEvent, requiredDocuments: updatedRequiredDocs};
-                                  setManageFilesEvent(updatedEvent);
-                                  await handleSaveFiles(updatedEvent);
+                                  setManageFilesEvent({...manageFilesEvent, requiredDocuments: updatedRequiredDocs});
+                                  await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=save-files&event_id=${manageFilesEvent.id}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ required_documents: updatedRequiredDocs, requester_email: currentUser?.email || null, is_admin: isAdmin })
+                                  });
+                                  await loadEvents();
                                   toast({
                                     title: "Документ удален",
                                     description: `${doc.name} был удален`
@@ -5478,13 +5480,14 @@ export default function Index() {
                                     reader.readAsDataURL(file);
                                   });
                                   
-                                  const response = await fetch('https://functions.poehali.dev/d33abef9-76df-4869-9223-096e3c85c33f', {
+                                  const response = await fetch('https://functions.poehali.dev/3b73897b-697b-4c87-b36f-0fcc17893bc3', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
                                       fileName: file.name,
                                       fileContent: fileContent,
-                                      fileType: 'document'
+                                      event_id: manageFilesEvent.id,
+                                      documentType: doc.type
                                     })
                                   });
                                   
@@ -5495,9 +5498,7 @@ export default function Index() {
                                   );
                                   
                                   setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, requiredDocuments: updatedRequiredDocs} : ev));
-                                  const updatedEvent = {...manageFilesEvent, requiredDocuments: updatedRequiredDocs};
-                                  setManageFilesEvent(updatedEvent);
-                                  await handleSaveFiles(updatedEvent);
+                                  setManageFilesEvent({...manageFilesEvent, requiredDocuments: updatedRequiredDocs});
                                   
                                   toast({
                                     title: "Документ загружен",
@@ -5556,9 +5557,13 @@ export default function Index() {
                             onClick={async () => {
                               const updatedDocs = manageFilesEvent.documents?.filter((_, index) => index !== i);
                               setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, documents: updatedDocs} : ev));
-                              const updatedEvent = {...manageFilesEvent, documents: updatedDocs};
-                              setManageFilesEvent(updatedEvent);
-                              await handleSaveFiles(updatedEvent);
+                              setManageFilesEvent({...manageFilesEvent, documents: updatedDocs});
+                              await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=delete-file&event_id=${manageFilesEvent.id}`, {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ url: doc.url, table: 'documents', requester_email: currentUser?.email || null, is_admin: isAdmin })
+                              });
+                              await loadEvents();
                               toast({
                                 title: "Документ удален",
                                 description: `${doc.name} был удален`
@@ -5607,13 +5612,13 @@ export default function Index() {
                           reader.readAsDataURL(file);
                         });
                         
-                        const response = await fetch('https://functions.poehali.dev/d33abef9-76df-4869-9223-096e3c85c33f', {
+                        const response = await fetch('https://functions.poehali.dev/3b73897b-697b-4c87-b36f-0fcc17893bc3', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
                             fileName: file.name,
                             fileContent: fileContent,
-                            fileType: 'document'
+                            event_id: manageFilesEvent.id
                           })
                         });
                         
@@ -5622,9 +5627,8 @@ export default function Index() {
                       }
                       
                       setEvents(events.map(e => e.id === manageFilesEvent.id ? {...e, documents: uploadedDocs} : e));
-                      const updatedEvent = {...manageFilesEvent, documents: uploadedDocs};
-                      setManageFilesEvent(updatedEvent);
-                      await handleSaveFiles(updatedEvent);
+                      setManageFilesEvent({...manageFilesEvent, documents: uploadedDocs});
+                      await loadEvents();
                       toast({
                         title: "Документы загружены",
                         description: `Загружено ${files.length} файл(ов)`
@@ -5683,9 +5687,13 @@ export default function Index() {
                             onClick={async () => {
                               const updatedMedia = manageFilesEvent.media?.filter((_, index) => index !== i);
                               setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, media: updatedMedia} : ev));
-                              const updatedEvent = {...manageFilesEvent, media: updatedMedia};
-                              setManageFilesEvent(updatedEvent);
-                              await handleSaveFiles(updatedEvent);
+                              setManageFilesEvent({...manageFilesEvent, media: updatedMedia});
+                              await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=delete-file&event_id=${manageFilesEvent.id}`, {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ url: item.url, table: 'media', requester_email: currentUser?.email || null, is_admin: isAdmin })
+                              });
+                              await loadEvents();
                               toast({
                                 title: "Медиафайл удален",
                                 description: `${item.name} был удален`
@@ -5717,9 +5725,8 @@ export default function Index() {
                   existingMedia={manageFilesEvent.media || []}
                   onMediaUpdate={async (updatedMedia) => {
                     setEvents(events.map(e => e.id === manageFilesEvent.id ? {...e, media: updatedMedia} : e));
-                    const updatedEvent = {...manageFilesEvent, media: updatedMedia};
-                    setManageFilesEvent(updatedEvent);
-                    await handleSaveFiles(updatedEvent);
+                    setManageFilesEvent({...manageFilesEvent, media: updatedMedia});
+                    await loadEvents();
                   }}
                   isReadOnly={false}
                 />
