@@ -55,6 +55,21 @@
         "error": "string"
       },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Save files - event not found",
+      "method": "PUT",
+      "path": "/?resource=events&action=save-files&event_id=99999",
+      "body": {
+        "documents": [],
+        "requester_email": "unknown@test.com",
+        "is_admin": false
+      },
+      "expectedStatus": 404,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
     }
   ]
 }

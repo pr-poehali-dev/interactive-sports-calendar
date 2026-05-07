@@ -969,6 +969,32 @@ export default function Index() {
     setIsEditDialogOpen(true);
   };
   
+  const handleSaveFiles = async (eventData: typeof manageFilesEvent) => {
+    if (!eventData) return;
+    try {
+      const response = await fetch(
+        `https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=save-files&event_id=${eventData.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            documents: eventData.documents || [],
+            media: eventData.media || [],
+            required_documents: eventData.requiredDocuments || [],
+            requester_email: currentUser?.email || null,
+            is_admin: isAdmin
+          })
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || 'Ошибка сохранения');
+      await loadEvents();
+      toast({ title: 'Файлы сохранены', description: 'Изменения успешно записаны' });
+    } catch (error) {
+      toast({ title: 'Ошибка', description: `${error}`, variant: 'destructive' });
+    }
+  };
+
   const handleSaveEdit = async () => {
     if (!editingEvent) return;
     
@@ -5381,12 +5407,14 @@ export default function Index() {
                               <Button 
                                 variant="ghost" 
                                 size="sm"
-                                onClick={() => {
+                                onClick={async () => {
                                   const updatedRequiredDocs = manageFilesEvent.requiredDocuments?.map((d, idx) => 
                                     idx === i ? { ...d, uploaded: false, url: undefined, fileName: undefined } : d
                                   );
                                   setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, requiredDocuments: updatedRequiredDocs} : ev));
-                                  setManageFilesEvent({...manageFilesEvent, requiredDocuments: updatedRequiredDocs});
+                                  const updatedEvent = {...manageFilesEvent, requiredDocuments: updatedRequiredDocs};
+                                  setManageFilesEvent(updatedEvent);
+                                  await handleSaveFiles(updatedEvent);
                                   toast({
                                     title: "Документ удален",
                                     description: `${doc.name} был удален`
@@ -5438,7 +5466,9 @@ export default function Index() {
                                   );
                                   
                                   setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, requiredDocuments: updatedRequiredDocs} : ev));
-                                  setManageFilesEvent({...manageFilesEvent, requiredDocuments: updatedRequiredDocs});
+                                  const updatedEvent = {...manageFilesEvent, requiredDocuments: updatedRequiredDocs};
+                                  setManageFilesEvent(updatedEvent);
+                                  await handleSaveFiles(updatedEvent);
                                   
                                   toast({
                                     title: "Документ загружен",
@@ -5494,10 +5524,12 @@ export default function Index() {
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => {
+                            onClick={async () => {
                               const updatedDocs = manageFilesEvent.documents?.filter((_, index) => index !== i);
                               setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, documents: updatedDocs} : ev));
-                              setManageFilesEvent({...manageFilesEvent, documents: updatedDocs});
+                              const updatedEvent = {...manageFilesEvent, documents: updatedDocs};
+                              setManageFilesEvent(updatedEvent);
+                              await handleSaveFiles(updatedEvent);
                               toast({
                                 title: "Документ удален",
                                 description: `${doc.name} был удален`
@@ -5561,7 +5593,9 @@ export default function Index() {
                       }
                       
                       setEvents(events.map(e => e.id === manageFilesEvent.id ? {...e, documents: uploadedDocs} : e));
-                      setManageFilesEvent({...manageFilesEvent, documents: uploadedDocs});
+                      const updatedEvent = {...manageFilesEvent, documents: uploadedDocs};
+                      setManageFilesEvent(updatedEvent);
+                      await handleSaveFiles(updatedEvent);
                       toast({
                         title: "Документы загружены",
                         description: `Загружено ${files.length} файл(ов)`
@@ -5617,10 +5651,12 @@ export default function Index() {
                             variant="destructive"
                             size="sm"
                             className="h-7 w-7 p-0"
-                            onClick={() => {
+                            onClick={async () => {
                               const updatedMedia = manageFilesEvent.media?.filter((_, index) => index !== i);
                               setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, media: updatedMedia} : ev));
-                              setManageFilesEvent({...manageFilesEvent, media: updatedMedia});
+                              const updatedEvent = {...manageFilesEvent, media: updatedMedia};
+                              setManageFilesEvent(updatedEvent);
+                              await handleSaveFiles(updatedEvent);
                               toast({
                                 title: "Медиафайл удален",
                                 description: `${item.name} был удален`
@@ -5650,13 +5686,27 @@ export default function Index() {
                 <MediaUploader
                   eventId={manageFilesEvent.id}
                   existingMedia={manageFilesEvent.media || []}
-                  onMediaUpdate={(updatedMedia) => {
+                  onMediaUpdate={async (updatedMedia) => {
                     setEvents(events.map(e => e.id === manageFilesEvent.id ? {...e, media: updatedMedia} : e));
-                    setManageFilesEvent({...manageFilesEvent, media: updatedMedia});
-                    loadEvents();
+                    const updatedEvent = {...manageFilesEvent, media: updatedMedia};
+                    setManageFilesEvent(updatedEvent);
+                    await handleSaveFiles(updatedEvent);
                   }}
                   isReadOnly={false}
                 />
+              </div>
+
+              <div className="pt-4 border-t flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsManageFilesDialogOpen(false)}>
+                  Закрыть
+                </Button>
+                <Button
+                  onClick={() => handleSaveFiles(manageFilesEvent)}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Icon name="Save" size={16} className="mr-2" />
+                  Сохранить изменения
+                </Button>
               </div>
             </div>
           )}

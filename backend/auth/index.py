@@ -40,6 +40,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 return handle_update_event(event)
             elif path == 'report':
                 return handle_report_event(event)
+            elif path == 'save-files':
+                return handle_save_files(event)
         elif method == 'DELETE':
             return handle_delete_event(event)
     
@@ -831,6 +833,106 @@ def handle_update_event(event: Dict[str, Any]) -> Dict[str, Any]:
             'body': json.dumps({'error': f'Ошибка обновления события: {str(e)}'}),
             'isBase64Encoded': False
         }
+
+def handle_save_files(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Сохранить документы, медиафайлы и обязательные документы мероприятия в БД."""
+    params = event.get('queryStringParameters', {}) or {}
+    event_id = params.get('event_id')
+    body_data = json.loads(event.get('body', '{}'))
+
+    requester_email = body_data.get('requester_email')
+    is_admin = body_data.get('is_admin', False)
+
+    if not event_id:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'event_id обязателен'}),
+            'isBase64Encoded': False
+        }
+
+    try:
+        import psycopg2
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+        cur = conn.cursor()
+
+        cur.execute('SELECT submitted_by FROM events WHERE id = %s::integer', (event_id,))
+        row = cur.fetchone()
+        if not row:
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Мероприятие не найдено'}),
+                'isBase64Encoded': False
+            }
+
+        submitted_by = row[0]
+        if not is_admin and (not requester_email or requester_email != submitted_by):
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 403,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Нет прав для редактирования файлов этого мероприятия'}),
+                'isBase64Encoded': False
+            }
+
+        documents = body_data.get('documents')
+        media = body_data.get('media')
+        required_documents = body_data.get('required_documents')
+
+        if documents is not None:
+            cur.execute('DELETE FROM event_documents WHERE event_id = %s::integer', (event_id,))
+            for doc in documents:
+                cur.execute(
+                    'INSERT INTO event_documents (event_id, name, url) VALUES (%s::integer, %s, %s)',
+                    (event_id, doc.get('name'), doc.get('url'))
+                )
+
+        if media is not None:
+            cur.execute('DELETE FROM event_media WHERE event_id = %s::integer', (event_id,))
+            for item in media:
+                cur.execute(
+                    'INSERT INTO event_media (event_id, type, name, url) VALUES (%s::integer, %s, %s, %s)',
+                    (event_id, item.get('type'), item.get('name'), item.get('url'))
+                )
+
+        if required_documents is not None:
+            for doc in required_documents:
+                cur.execute('''
+                    UPDATE event_required_documents
+                    SET uploaded = %s, url = %s, file_name = %s,
+                        uploaded_at = CASE WHEN %s THEN CURRENT_TIMESTAMP ELSE uploaded_at END
+                    WHERE event_id = %s::integer AND doc_type = %s
+                ''', (
+                    doc.get('uploaded', False),
+                    doc.get('url'),
+                    doc.get('fileName'),
+                    doc.get('uploaded', False),
+                    event_id,
+                    doc.get('type')
+                ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'success': True}),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Ошибка сохранения файлов: {str(e)}'}),
+            'isBase64Encoded': False
+        }
+
 
 def handle_report_event(event: Dict[str, Any]) -> Dict[str, Any]:
     """Сохранить фактические итоги прошедшего мероприятия (участники, зрители, комментарий)."""
