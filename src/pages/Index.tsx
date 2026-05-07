@@ -4590,6 +4590,33 @@ export default function Index() {
                           </div>
                         )}
                         
+                        {event.requiredDocuments && event.requiredDocuments.some(d => d.uploaded && d.url) && (
+                          <div className="pt-4 border-t">
+                            <h3 className="font-semibold mb-3 flex items-center gap-2">
+                              <Icon name="ClipboardCheck" size={18} className="text-primary" />
+                              Официальные документы
+                            </h3>
+                            <div className="space-y-2">
+                              {event.requiredDocuments.filter(d => d.uploaded && d.url).map((doc, i) => (
+                                <div key={i} className="flex items-center justify-between p-2 border rounded-md bg-green-50">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <Icon name="FileCheck" size={16} className="text-green-600 shrink-0" />
+                                    <span className="text-sm truncate">{doc.name}</span>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => window.open(doc.url, '_blank')}
+                                  >
+                                    <Icon name="Download" size={14} className="mr-1" />
+                                    Скачать
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {event.documents && event.documents.length > 0 && (
                           <div className="pt-4 border-t">
                             <h3 className="font-semibold mb-3 flex items-center gap-2">
