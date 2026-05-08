@@ -532,10 +532,13 @@ export default function Index() {
           actualComment: e.actual_comment as string | undefined,
         }));
         setEvents(mapped);
+        setManageFilesEvent(prev => prev ? (mapped.find((e: {id: number}) => e.id === prev.id) as Event ?? prev) : null);
+        return mapped;
       }
     } catch (err) {
       console.error('Failed to load events:', err);
     }
+    return [];
   };
 
   useEffect(() => {

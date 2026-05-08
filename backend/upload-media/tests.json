@@ -5,7 +5,7 @@
       "method": "POST",
       "path": "/",
       "body": {
-        "event_id": 6,
+        "event_id": 15,
         "file_type": "image",
         "file_name": "test.jpg",
         "file_data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
