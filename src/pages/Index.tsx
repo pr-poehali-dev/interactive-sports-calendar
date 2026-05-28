@@ -5733,10 +5733,9 @@ export default function Index() {
                 <MediaUploader
                   eventId={manageFilesEvent.id}
                   existingMedia={manageFilesEvent.media || []}
-                  onMediaUpdate={async (updatedMedia) => {
+                  onMediaUpdate={(updatedMedia) => {
                     setEvents(events.map(e => e.id === manageFilesEvent.id ? {...e, media: updatedMedia} : e));
                     setManageFilesEvent({...manageFilesEvent, media: updatedMedia});
-                    await loadEvents();
                   }}
                   isReadOnly={false}
                 />

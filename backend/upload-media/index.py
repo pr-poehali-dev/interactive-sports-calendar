@@ -82,7 +82,7 @@ def handler(event: dict, context) -> dict:
         
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         schema = os.environ['MAIN_DB_SCHEMA']
-        print(f"[upload-media] DB insert: schema={schema} event_id={event_id!r} file_type={file_type!r} cdn_url={cdn_url[:60]}")
+        print(f"[upload-media] v2 DB insert: schema={schema} event_id={event_id!r} file_type={file_type!r} cdn_url={cdn_url[:60]}")
         cur = conn.cursor()
         
         if file_type == 'document':
