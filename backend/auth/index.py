@@ -31,6 +31,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     if resource == 'events':
         if method == 'GET' and path == 'list':
             return handle_list_events(event)
+
         elif method == 'POST':
             return handle_create_event(event)
         elif method == 'PUT':
