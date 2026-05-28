@@ -513,6 +513,13 @@ def handle_list_events(event: Dict[str, Any]) -> Dict[str, Any]:
                 d['additional_dates'] = [str(dt) for dt in d['additional_dates']]
             else:
                 d['additional_dates'] = []
+            if not isinstance(d.get('media'), list):
+                d['media'] = []
+            if not isinstance(d.get('documents'), list):
+                d['documents'] = []
+            if not isinstance(d.get('required_documents'), list):
+                d['required_documents'] = []
+            print(f"[auth] event {d.get('id')} media={d['media']}")
             return d
 
         return {
