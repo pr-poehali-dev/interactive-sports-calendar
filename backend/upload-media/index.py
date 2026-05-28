@@ -82,6 +82,7 @@ def handler(event: dict, context) -> dict:
         
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         schema = os.environ['MAIN_DB_SCHEMA']
+        print(f"[upload-media] DB insert: schema={schema} event_id={event_id!r} file_type={file_type!r} cdn_url={cdn_url[:60]}")
         cur = conn.cursor()
         
         if file_type == 'document':
@@ -127,6 +128,7 @@ def handler(event: dict, context) -> dict:
         }
         
     except Exception as e:
+        print(f"[upload-media] ERROR: {e}")
         return {
             'statusCode': 500,
             'headers': {
