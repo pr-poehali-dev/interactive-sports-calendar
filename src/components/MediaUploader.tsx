@@ -21,7 +21,7 @@ interface MediaUploaderProps {
 export function MediaUploader({ eventId, existingMedia = [], onMediaUpdate, isReadOnly = false }: MediaUploaderProps) {
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>(existingMedia);
   const [isUploading, setIsUploading] = useState(false);
-  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
@@ -185,8 +185,8 @@ export function MediaUploader({ eventId, existingMedia = [], onMediaUpdate, isRe
           </Label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {images.map((media, i) => (
-              <div key={i} className="relative group">
-                {imageErrors.has(i) ? (
+              <div key={media.url} className="relative group">
+                {imageErrors.has(media.url) ? (
                   <div className="w-full h-32 bg-muted rounded-lg border-2 border-gray-200 flex items-center justify-center">
                     <Icon name="ImageOff" size={32} className="text-muted-foreground" />
                   </div>
@@ -196,9 +196,8 @@ export function MediaUploader({ eventId, existingMedia = [], onMediaUpdate, isRe
                     alt={media.name}
                     className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 cursor-pointer"
                     onClick={() => openLightbox(i)}
-                    onError={(e) => {
-                      console.error('[MediaUploader] Image load error:', media.url, e);
-                      setImageErrors(prev => new Set(prev).add(i));
+                    onError={() => {
+                      setImageErrors(prev => new Set(prev).add(media.url));
                     }}
                   />
                 )}
