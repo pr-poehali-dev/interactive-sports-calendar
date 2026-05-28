@@ -474,9 +474,10 @@ def handle_list_events(event: Dict[str, Any]) -> Dict[str, Any]:
         import psycopg2
         from psycopg2.extras import RealDictCursor
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+        schema = os.environ.get('MAIN_DB_SCHEMA', 'public')
         cur = conn.cursor(cursor_factory=RealDictCursor)
         
-        cur.execute('''
+        cur.execute(f'''
             SELECT 
                 e.*,
                 COALESCE(json_agg(DISTINCT jsonb_build_object(
@@ -495,10 +496,10 @@ def handle_list_events(event: Dict[str, Any]) -> Dict[str, Any]:
                     'url', erd.url,
                     'fileName', erd.file_name
                 )) FILTER (WHERE erd.id IS NOT NULL), '[]'::json) as required_documents
-            FROM events e
-            LEFT JOIN event_documents ed ON e.id = ed.event_id
-            LEFT JOIN event_media em ON e.id = em.event_id
-            LEFT JOIN event_required_documents erd ON e.id = erd.event_id
+            FROM {schema}.events e
+            LEFT JOIN {schema}.event_documents ed ON e.id = ed.event_id
+            LEFT JOIN {schema}.event_media em ON e.id = em.event_id
+            LEFT JOIN {schema}.event_required_documents erd ON e.id = erd.event_id
             GROUP BY e.id
             ORDER BY e.date ASC
         ''')
