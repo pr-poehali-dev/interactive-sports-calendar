@@ -82,7 +82,7 @@ def handler(event: dict, context) -> dict:
         cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{s3_key}"
         
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
-        schema = os.environ['MAIN_DB_SCHEMA']
+        schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'
 
         cur = conn.cursor()
         

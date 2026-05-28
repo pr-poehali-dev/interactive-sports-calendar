@@ -1,7 +1,7 @@
 {
   "tests": [
     {
-      "name": "List events",
+      "name": "List events with media",
       "method": "GET",
       "path": "/?action=list&resource=events",
       "expectedStatus": 200,

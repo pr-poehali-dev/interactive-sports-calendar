@@ -475,7 +475,7 @@ def handle_list_events(event: Dict[str, Any]) -> Dict[str, Any]:
         import psycopg2
         from psycopg2.extras import RealDictCursor
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
-        schema = os.environ.get('MAIN_DB_SCHEMA', 'public')
+        schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'
         cur = conn.cursor(cursor_factory=RealDictCursor)
         
         cur.execute(f'''
