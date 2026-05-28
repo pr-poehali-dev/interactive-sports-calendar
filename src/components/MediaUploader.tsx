@@ -25,6 +25,11 @@ export function MediaUploader({ eventId, existingMedia = [], onMediaUpdate, isRe
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
+  useEffect(() => {
+    setMediaFiles(existingMedia);
+    setImageErrors(new Set());
+  }, [JSON.stringify(existingMedia)]);
+
   const images = mediaFiles.filter(f => f.type === 'image');
   const videos = mediaFiles.filter(f => f.type === 'video');
 
@@ -191,7 +196,8 @@ export function MediaUploader({ eventId, existingMedia = [], onMediaUpdate, isRe
                     alt={media.name}
                     className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 cursor-pointer"
                     onClick={() => openLightbox(i)}
-                    onError={() => {
+                    onError={(e) => {
+                      console.error('[MediaUploader] Image load error:', media.url, e);
                       setImageErrors(prev => new Set(prev).add(i));
                     }}
                   />

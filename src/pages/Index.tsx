@@ -5667,11 +5667,18 @@ export default function Index() {
                         key={i} 
                         className="relative group"
                       >
-                        <div className="aspect-square bg-muted rounded-md flex items-center justify-center border">
+                        <div className="aspect-square bg-muted rounded-md overflow-hidden border">
                           {item.type === 'image' ? (
-                            <Icon name="Image" size={32} className="text-muted-foreground" />
+                            <img
+                              src={item.url}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }}
+                            />
                           ) : (
-                            <Icon name="Video" size={32} className="text-muted-foreground" />
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Icon name="Video" size={32} className="text-muted-foreground" />
+                            </div>
                           )}
                         </div>
                         <div className="absolute top-1 right-1 flex gap-1">
