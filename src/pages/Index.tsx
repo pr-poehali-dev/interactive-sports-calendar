@@ -509,7 +509,7 @@ export default function Index() {
 
   const loadEvents = async () => {
     try {
-      const url = 'https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list&resource=events';
+      const url = 'https://functions.poehali.dev/f40a8f53-898d-4363-aef5-19467211127c';
       const response = await fetch(url);
       const data = await response.json();
       if (data.events) {

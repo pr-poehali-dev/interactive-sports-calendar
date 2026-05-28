@@ -475,7 +475,7 @@ def handle_list_events(event: Dict[str, Any]) -> Dict[str, Any]:
         import psycopg2
         from psycopg2.extras import RealDictCursor
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
-        schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'
+        schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'  # v4
         cur = conn.cursor(cursor_factory=RealDictCursor)
         
         cur.execute(f'''
@@ -508,18 +508,24 @@ def handle_list_events(event: Dict[str, Any]) -> Dict[str, Any]:
         cur.close()
         conn.close()
         
+        import json as _json
+        def parse_json_field(val):
+            if val is None: return []
+            if isinstance(val, list): return val
+            if isinstance(val, str):
+                try: return _json.loads(val)
+                except: return []
+            return val
+
         def serialize_event(e):
             d = dict(e)
             if d.get('additional_dates'):
                 d['additional_dates'] = [str(dt) for dt in d['additional_dates']]
             else:
                 d['additional_dates'] = []
-            if not isinstance(d.get('media'), list):
-                d['media'] = []
-            if not isinstance(d.get('documents'), list):
-                d['documents'] = []
-            if not isinstance(d.get('required_documents'), list):
-                d['required_documents'] = []
+            d['media'] = parse_json_field(d.get('media'))
+            d['documents'] = parse_json_field(d.get('documents'))
+            d['required_documents'] = parse_json_field(d.get('required_documents'))
             return d
 
         return {
