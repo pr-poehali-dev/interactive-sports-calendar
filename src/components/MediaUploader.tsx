@@ -32,7 +32,6 @@ export function MediaUploader({ eventId, existingMedia = [], onMediaUpdate, isRe
 
   const images = mediaFiles.filter(f => f.type === 'image');
   const videos = mediaFiles.filter(f => f.type === 'video');
-  console.log('[MediaUploader] render', { eventId, mediaFiles, images: images.length, existingMedia });
 
   const openLightbox = (index: number) => setLightboxIndex(index);
   const closeLightbox = () => setLightboxIndex(null);

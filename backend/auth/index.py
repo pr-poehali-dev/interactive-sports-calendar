@@ -519,7 +519,6 @@ def handle_list_events(event: Dict[str, Any]) -> Dict[str, Any]:
                 d['documents'] = []
             if not isinstance(d.get('required_documents'), list):
                 d['required_documents'] = []
-            print(f"[auth] event {d.get('id')} media={d['media']}")
             return d
 
         return {
