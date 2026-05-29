@@ -4707,18 +4707,20 @@ export default function Index() {
                                       reader.readAsDataURL(file);
                                     });
                                     
-                                    const response = await fetch('https://functions.poehali.dev/d33abef9-76df-4869-9223-096e3c85c33f', {
+                                    const response = await fetch('https://functions.poehali.dev/28a5d0ff-58ec-4f5d-9c7f-a7085a130c48', {
                                       method: 'POST',
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({
-                                        fileName: file.name,
-                                        fileContent: fileContent,
-                                        fileType: 'document'
+                                        event_id: event.id,
+                                        file_type: 'document',
+                                        file_name: file.name,
+                                        file_data: fileContent,
+                                        mime_type: file.type
                                       })
                                     });
                                     
                                     const result = await response.json();
-                                    uploadedDocs.push({ name: file.name, url: result.url });
+                                    if (result.success) uploadedDocs.push({ name: file.name, url: result.url });
                                   }
                                   
                                   setEvents(events.map(e => e.id === event.id ? {...e, documents: uploadedDocs} : e));
@@ -4776,18 +4778,20 @@ export default function Index() {
                                       reader.readAsDataURL(file);
                                     });
                                     
-                                    const response = await fetch('https://functions.poehali.dev/d33abef9-76df-4869-9223-096e3c85c33f', {
+                                    const response = await fetch('https://functions.poehali.dev/28a5d0ff-58ec-4f5d-9c7f-a7085a130c48', {
                                       method: 'POST',
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({
-                                        fileName: file.name,
-                                        fileContent: fileContent,
-                                        fileType: fileType
+                                        event_id: event.id,
+                                        file_type: fileType,
+                                        file_name: file.name,
+                                        file_data: fileContent,
+                                        mime_type: file.type
                                       })
                                     });
                                     
                                     const result = await response.json();
-                                    uploadedMedia.push({ type: fileType, url: result.url, name: file.name });
+                                    if (result.success) uploadedMedia.push({ type: fileType, url: result.url, name: file.name });
                                   }
                                   
                                   setEvents(events.map(e => e.id === event.id ? {...e, media: uploadedMedia} : e));
