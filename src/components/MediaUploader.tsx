@@ -9,6 +9,7 @@ interface MediaFile {
   type: 'image' | 'video';
   name: string;
   url: string;
+  previewUrl?: string;
 }
 
 interface MediaUploaderProps {
@@ -65,6 +66,8 @@ export function MediaUploader({ eventId, existingMedia = [], onMediaUpdate, isRe
       const uploadedMedia: MediaFile[] = [];
 
       for (const file of files) {
+        const previewUrl = fileType === 'image' ? URL.createObjectURL(file) : undefined;
+
         const reader = new FileReader();
         const fileContent = await new Promise<string>((resolve) => {
           reader.onload = () => {
@@ -74,7 +77,7 @@ export function MediaUploader({ eventId, existingMedia = [], onMediaUpdate, isRe
           reader.readAsDataURL(file);
         });
 
-        const response = await fetch('https://functions.poehali.dev/d33abef9-76df-4869-9223-096e3c85c33f', {
+        const response = await fetch('https://functions.poehali.dev/28a5d0ff-58ec-4f5d-9c7f-a7085a130c48', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -93,7 +96,8 @@ export function MediaUploader({ eventId, existingMedia = [], onMediaUpdate, isRe
             id: result.id,
             type: fileType,
             name: result.file_name,
-            url: result.url
+            url: result.url,
+            previewUrl
           });
         }
       }
@@ -192,7 +196,7 @@ export function MediaUploader({ eventId, existingMedia = [], onMediaUpdate, isRe
                   </div>
                 ) : (
                   <img
-                    src={media.url}
+                    src={media.previewUrl || media.url}
                     alt={media.name}
                     className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 cursor-pointer"
                     onClick={() => openLightbox(i)}
