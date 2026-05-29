@@ -530,6 +530,8 @@ export default function Index() {
           actualParticipants: e.actual_participants as number | undefined,
           actualSpectators: e.actual_spectators as number | undefined,
           actualComment: e.actual_comment as string | undefined,
+          media: Array.isArray(e.media) ? e.media : (typeof e.media === 'string' ? JSON.parse(e.media) : []),
+          documents: Array.isArray(e.documents) ? e.documents : (typeof e.documents === 'string' ? JSON.parse(e.documents) : []),
         }));
         setEvents(mapped);
         setManageFilesEvent(prev => prev ? (mapped.find((e: {id: number}) => e.id === prev.id) as Event ?? prev) : null);

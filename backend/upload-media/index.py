@@ -83,6 +83,7 @@ def handler(event: dict, context) -> dict:
         
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'
+        print(f"[upload-media] schema={schema!r} event_id={event_id} file_type={file_type}")
 
         cur = conn.cursor()
         
