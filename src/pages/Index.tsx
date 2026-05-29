@@ -4585,11 +4585,45 @@ export default function Index() {
                               <Icon name="Images" size={18} className="text-primary" />
                               Фото и видео с мероприятия
                             </h3>
-                            <MediaUploader 
-                              eventId={event.id} 
-                              existingMedia={event.media}
-                              isReadOnly={true}
-                            />
+                            {isAdmin ? (
+                              <div className="grid grid-cols-4 gap-3">
+                                {event.media!.map((item, i) => (
+                                  <div key={i} className="relative group">
+                                    <div className="aspect-square bg-muted rounded-md overflow-hidden border">
+                                      {item.type === 'image' ? (
+                                        <img src={item.url} alt={item.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center"><Icon name="Video" size={32} className="text-muted-foreground" /></div>
+                                      )}
+                                    </div>
+                                    <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Button variant="secondary" size="sm" className="h-7 w-7 p-0" onClick={() => window.open(item.url, '_blank')}>
+                                        <Icon name="Eye" size={14} />
+                                      </Button>
+                                      <Button variant="destructive" size="sm" className="h-7 w-7 p-0" onClick={async () => {
+                                        const updatedMedia = event.media?.filter((_, idx) => idx !== i);
+                                        setEvents(events.map(ev => ev.id === event.id ? {...ev, media: updatedMedia} : ev));
+                                        await fetch('https://functions.poehali.dev/3017546b-9c41-4e65-9d13-576cc740fbc8', {
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ url: item.url, table: 'media' })
+                                        });
+                                        toast({ title: "Медиафайл удалён", description: item.name });
+                                      }}>
+                                        <Icon name="Trash2" size={14} />
+                                      </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1 truncate">{item.name}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <MediaUploader 
+                                eventId={event.id} 
+                                existingMedia={event.media}
+                                isReadOnly={true}
+                              />
+                            )}
                           </div>
                         )}
                         
@@ -4606,14 +4640,36 @@ export default function Index() {
                                     <Icon name="FileCheck" size={16} className="text-green-600 shrink-0" />
                                     <span className="text-sm truncate">{doc.name}</span>
                                   </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => window.open(doc.url, '_blank')}
-                                  >
-                                    <Icon name="Download" size={14} className="mr-1" />
-                                    Скачать
-                                  </Button>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => window.open(doc.url!, '_blank')}
+                                    >
+                                      <Icon name="Download" size={14} className="mr-1" />
+                                      Скачать
+                                    </Button>
+                                    {isAdmin && (
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={async () => {
+                                          const updatedReqDocs = event.requiredDocuments?.map((d, idx) =>
+                                            idx === i ? {...d, uploaded: false, url: undefined, fileName: undefined} : d
+                                          );
+                                          setEvents(events.map(ev => ev.id === event.id ? {...ev, requiredDocuments: updatedReqDocs} : ev));
+                                          await fetch('https://functions.poehali.dev/3017546b-9c41-4e65-9d13-576cc740fbc8', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ url: doc.url, table: 'documents' })
+                                          });
+                                          toast({ title: "Документ удалён", description: doc.name });
+                                        }}
+                                      >
+                                        <Icon name="Trash2" size={14} />
+                                      </Button>
+                                    )}
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -4641,9 +4697,15 @@ export default function Index() {
                                     <Button
                                       variant="destructive"
                                       size="sm"
-                                      onClick={() => {
+                                      onClick={async () => {
                                         const updatedDocs = event.documents?.filter((_, index) => index !== i);
                                         setEvents(events.map(ev => ev.id === event.id ? {...ev, documents: updatedDocs} : ev));
+                                        await fetch('https://functions.poehali.dev/3017546b-9c41-4e65-9d13-576cc740fbc8', {
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ url: doc.url, table: 'documents' })
+                                        });
+                                        toast({ title: "Документ удалён", description: doc.name });
                                       }}
                                     >
                                       <Icon name="Trash2" size={14} />
