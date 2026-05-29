@@ -1021,7 +1021,10 @@ def handle_report_event(event: Dict[str, Any]) -> Dict[str, Any]:
 def handle_delete_event(event: Dict[str, Any]) -> Dict[str, Any]:
     params = event.get('queryStringParameters', {}) or {}
     event_id = params.get('event_id')
-    
+    body_data = json.loads(event.get('body', '{}')) if event.get('body') else {}
+    requester_email = body_data.get('requester_email')
+    is_admin = body_data.get('is_admin', False)
+
     if not event_id:
         return {
             'statusCode': 400,
@@ -1029,21 +1032,43 @@ def handle_delete_event(event: Dict[str, Any]) -> Dict[str, Any]:
             'body': json.dumps({'error': 'event_id обязателен'}),
             'isBase64Encoded': False
         }
-    
+
     try:
         import psycopg2
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
         cur = conn.cursor()
-        
-        cur.execute('DELETE FROM event_media WHERE event_id = %s', (event_id,))
-        cur.execute('DELETE FROM event_documents WHERE event_id = %s', (event_id,))
-        cur.execute('DELETE FROM event_required_documents WHERE event_id = %s', (event_id,))
-        cur.execute('DELETE FROM events WHERE id = %s', (event_id,))
-        
+
+        cur.execute('SELECT submitted_by FROM events WHERE id = %s::integer', (event_id,))
+        row = cur.fetchone()
+        if not row:
+            cur.close(); conn.close()
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Мероприятие не найдено'}),
+                'isBase64Encoded': False
+            }
+
+        submitted_by = row[0]
+        if not is_admin and (not requester_email or requester_email != submitted_by):
+            cur.close(); conn.close()
+            return {
+                'statusCode': 403,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Нет прав для удаления этого мероприятия'}),
+                'isBase64Encoded': False
+            }
+
+        schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'
+        cur.execute(f'DELETE FROM {schema}.event_media WHERE event_id = %s', (event_id,))
+        cur.execute(f'DELETE FROM {schema}.event_documents WHERE event_id = %s', (event_id,))
+        cur.execute(f'DELETE FROM {schema}.event_required_documents WHERE event_id = %s', (event_id,))
+        cur.execute(f'DELETE FROM {schema}.events WHERE id = %s', (event_id,))
+
         conn.commit()
         cur.close()
         conn.close()
-        
+
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},

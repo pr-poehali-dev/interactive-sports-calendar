@@ -5068,20 +5068,40 @@ export default function Index() {
                                 </Button>
                               </DialogTrigger>
                             </Dialog>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
                               <Button
                                 variant="outline"
                                 onClick={() => handleEditEvent(event)}
                               >
-                                <Icon name="Pencil" size={16} className="mr-2" />
+                                <Icon name="Pencil" size={16} className="mr-1" />
                                 Изменить
                               </Button>
                               <Button
                                 variant="outline"
                                 onClick={() => { setManageFilesEvent(event); setIsManageFilesDialogOpen(true); }}
                               >
-                                <Icon name="Upload" size={16} className="mr-2" />
+                                <Icon name="Upload" size={16} className="mr-1" />
                                 Файлы
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                onClick={async () => {
+                                  if (!confirm(`Удалить мероприятие "${event.title}"? Это действие необратимо.`)) return;
+                                  const res = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=delete&event_id=${event.id}`, {
+                                    method: 'DELETE',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ requester_email: currentUser?.email, is_admin: false })
+                                  });
+                                  const data = await res.json();
+                                  if (data.success) {
+                                    await loadEvents();
+                                    toast({ title: 'Мероприятие удалено', description: event.title });
+                                  } else {
+                                    toast({ title: 'Ошибка', description: data.error, variant: 'destructive' });
+                                  }
+                                }}
+                              >
+                                <Icon name="Trash2" size={16} />
                               </Button>
                             </div>
                           </CardContent>
