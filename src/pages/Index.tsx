@@ -5511,15 +5511,14 @@ export default function Index() {
                                   );
                                   setEvents(events.map(ev => ev.id === manageFilesEvent.id ? {...ev, requiredDocuments: updatedRequiredDocs} : ev));
                                   setManageFilesEvent({...manageFilesEvent, requiredDocuments: updatedRequiredDocs});
-                                  await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=save-files&event_id=${manageFilesEvent.id}`, {
-                                    method: 'PUT',
+                                  await fetch('https://functions.poehali.dev/3017546b-9c41-4e65-9d13-576cc740fbc8', {
+                                    method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ required_documents: updatedRequiredDocs, requester_email: currentUser?.email || null, is_admin: isAdmin })
+                                    body: JSON.stringify({ url: doc.url, table: 'required_documents' })
                                   });
-                                  await loadEvents();
                                   toast({
-                                    title: "Документ удален",
-                                    description: `${doc.name} был удален`
+                                    title: "Документ удалён",
+                                    description: `${doc.name} был удалён`
                                   });
                                 }}
                               >

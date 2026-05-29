@@ -1,6 +1,6 @@
 '''
 Удаление медиафайлов и документов мероприятия из S3 и БД.
-Доступно только администраторам.
+table: 'media' -> event_media, 'documents' -> event_documents, 'required_documents' -> event_required_documents (сброс флага)
 '''
 import json
 import boto3
@@ -16,19 +16,27 @@ def handler(event: dict, context) -> dict:
 
     body = json.loads(event.get('body', '{}'))
     file_url = body.get('url')
-    table = body.get('table')  # 'media' или 'documents'
+    table = body.get('table')  # 'media', 'documents', 'required_documents'
 
-    if not file_url or table not in ('media', 'documents'):
+    if not file_url or table not in ('media', 'documents', 'required_documents'):
         return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Missing url or invalid table'})}
 
     schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'
-    print(f"[delete-media] table={table} url={file_url} schema={schema}")
+    print(f"[delete-media] table={table} url={file_url}")
 
-    # Удаляем из БД по URL
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
-    db_table = 'event_media' if table == 'media' else 'event_documents'
-    cur.execute(f'DELETE FROM {schema}.{db_table} WHERE url = %s RETURNING id', (file_url,))
+
+    if table == 'required_documents':
+        # Сбрасываем флаг — не удаляем строку, а очищаем данные о файле
+        cur.execute(
+            f"UPDATE {schema}.event_required_documents SET uploaded=false, url=NULL, file_name=NULL, uploaded_at=NULL WHERE url = %s RETURNING id",
+            (file_url,)
+        )
+    else:
+        db_table = 'event_media' if table == 'media' else 'event_documents'
+        cur.execute(f'DELETE FROM {schema}.{db_table} WHERE url = %s RETURNING id', (file_url,))
+
     deleted = cur.fetchone()
     conn.commit()
     cur.close()
@@ -37,7 +45,7 @@ def handler(event: dict, context) -> dict:
     if not deleted:
         return {'statusCode': 404, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'File not found in DB'})}
 
-    # Удаляем из S3
+    # Удаляем физически из S3
     try:
         access_key = os.environ['AWS_ACCESS_KEY_ID']
         cdn_prefix = f'https://cdn.poehali.dev/projects/{access_key}/bucket/'
