@@ -5068,14 +5068,22 @@ export default function Index() {
                                 </Button>
                               </DialogTrigger>
                             </Dialog>
-                            <Button
-                              variant="outline"
-                              className="w-full"
-                              onClick={() => { setManageFilesEvent(event); setIsManageFilesDialogOpen(true); }}
-                            >
-                              <Icon name="Upload" size={16} className="mr-2" />
-                              Управление файлами
-                            </Button>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => handleEditEvent(event)}
+                              >
+                                <Icon name="Pencil" size={16} className="mr-2" />
+                                Изменить
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => { setManageFilesEvent(event); setIsManageFilesDialogOpen(true); }}
+                              >
+                                <Icon name="Upload" size={16} className="mr-2" />
+                                Файлы
+                              </Button>
+                            </div>
                           </CardContent>
                         </Card>
                       );
