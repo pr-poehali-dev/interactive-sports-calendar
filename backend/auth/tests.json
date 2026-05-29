@@ -94,6 +94,31 @@
       "expectedStatus": 400,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Update profile - missing user_id",
+      "method": "POST",
+      "path": "/?action=update-profile",
+      "body": {"name": "Test"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "List profile changes",
+      "method": "GET",
+      "path": "/?action=list-profile-changes&status=pending",
+      "expectedStatus": 200,
+      "expectedBody": {"changes": []},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Approve profile change - not found",
+      "method": "PUT",
+      "path": "/?action=approve-profile-change&change_id=99999",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
     }
   ]
 }

@@ -19,6 +19,26 @@ type SportType = 'all' | 'football' | 'basketball' | 'running' | 'volleyball' | 
 
 type EventLevel = 'municipal' | 'intermunicipal' | 'regional' | 'interregional' | 'cfo' | 'national' | 'european' | 'world';
 
+interface ProfileChange {
+  id: number;
+  user_id: number;
+  email: string;
+  current_name: string;
+  user_type: string;
+  name?: string;
+  phone?: string;
+  birth_date?: string;
+  passport_series?: string;
+  passport_number?: string;
+  passport_issue_date?: string;
+  passport_issued_by?: string;
+  inn?: string;
+  company_name?: string;
+  legal_address?: string;
+  status: string;
+  submitted_at?: string;
+}
+
 interface RequiredDocument {
   type: 'approval_letter' | 'police_notification' | 'security_plan' | 'regulations' | 'protocols';
   name: string;
@@ -409,6 +429,11 @@ export default function Index() {
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [rejectingEventId, setRejectingEventId] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string>('');
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState<Record<string, string>>({});
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileChangesPending, setProfileChangesPending] = useState(false);
+  const [profileChanges, setProfileChanges] = useState<ProfileChange[]>([]);
   const [registerForm, setRegisterForm] = useState({ 
     email: '', 
     password: '', 
@@ -498,6 +523,11 @@ export default function Index() {
           }
         })
         .catch(err => console.error('Failed to load users:', err));
+
+      fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list-profile-changes&status=pending')
+        .then(res => res.json())
+        .then(data => { if (data.changes) setProfileChanges(data.changes); })
+        .catch(err => console.error('Failed to load profile changes:', err));
     };
 
     if (isAdmin) {
@@ -2484,10 +2514,34 @@ export default function Index() {
               <Button variant="outline" onClick={() => setIsDeleteAccountDialogOpen(true)} className="gap-2" title="Удалить аккаунт">
                 <Icon name="Trash2" size={18} />
               </Button>
-              <Button variant="outline" onClick={handleUserLogout} className="gap-2">
+              <Button variant="outline" onClick={async () => {
+                setProfileForm({
+                  name: currentUser?.name || '',
+                  phone: currentUser?.phone || '',
+                  birthDate: currentUser?.birthDate || '',
+                  passportSeries: currentUser?.passportSeries || '',
+                  passportNumber: currentUser?.passportNumber || '',
+                  passportIssueDate: currentUser?.passportIssueDate || '',
+                  passportIssuedBy: currentUser?.passportIssuedBy || '',
+                  inn: currentUser?.inn || '',
+                  companyName: currentUser?.companyName || '',
+                  legalAddress: currentUser?.legalAddress || '',
+                });
+                setIsEditingProfile(false);
+                // Проверяем есть ли pending-заявка
+                try {
+                  const res = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=list-profile-changes&status=pending`);
+                  const data = await res.json();
+                  const hasPending = (data.changes || []).some((c: ProfileChange) => c.user_id === currentUser?.id);
+                  setProfileChangesPending(hasPending);
+                } catch { setProfileChangesPending(false); }
+                setIsProfileDialogOpen(true);
+              }} className="gap-2">
                 <Icon name="User" size={18} />
                 {currentUser?.name}
-                <Icon name="LogOut" size={16} className="ml-2" />
+              </Button>
+              <Button variant="outline" onClick={handleUserLogout} className="gap-2" title="Выйти">
+                <Icon name="LogOut" size={18} />
               </Button>
             </>
           )}
@@ -3553,8 +3607,8 @@ export default function Index() {
                 <TabsTrigger value="users" className="text-lg relative">
                   <Icon name="Users" size={18} className="mr-2" />
                   Пользователи
-                  {users.filter(u => !u.approved).length > 0 && (
-                    <Badge className="ml-2 bg-red-500">{users.filter(u => !u.approved).length}</Badge>
+                  {(users.filter(u => !u.approved).length + profileChanges.length) > 0 && (
+                    <Badge className="ml-2 bg-red-500">{users.filter(u => !u.approved).length + profileChanges.length}</Badge>
                   )}
                 </TabsTrigger>
               </>
@@ -5268,6 +5322,89 @@ export default function Index() {
                   </div>
                 </div>
               )}
+
+              {/* Модерация изменений профилей */}
+              {profileChanges.length > 0 && (
+                <div className="mt-8">
+                  <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <Icon name="ClipboardEdit" size={22} className="text-amber-500" />
+                    Заявки на изменение данных
+                    <Badge className="bg-amber-500">{profileChanges.length}</Badge>
+                  </h2>
+                  <div className="grid gap-4">
+                    {profileChanges.map((change) => (
+                      <Card key={change.id} className="border-2 border-amber-300">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="text-base">{change.current_name}</CardTitle>
+                              <CardDescription>{change.email} · {change.user_type === 'individual' ? 'Физ. лицо' : 'Юр. лицо'}</CardDescription>
+                            </div>
+                            <Badge variant="outline" className="border-amber-500 text-amber-700">
+                              <Icon name="Clock" size={12} className="mr-1" />
+                              На проверке
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm mb-4">
+                            {change.name && change.name !== change.current_name && (
+                              <><span className="text-muted-foreground">ФИО:</span><span className="font-medium">{change.name}</span></>
+                            )}
+                            {change.phone && <><span className="text-muted-foreground">Телефон:</span><span>{change.phone}</span></>}
+                            {change.birth_date && <><span className="text-muted-foreground">Дата рождения:</span><span>{change.birth_date}</span></>}
+                            {change.passport_series && <><span className="text-muted-foreground">Серия паспорта:</span><span>{change.passport_series}</span></>}
+                            {change.passport_number && <><span className="text-muted-foreground">Номер паспорта:</span><span>{change.passport_number}</span></>}
+                            {change.passport_issue_date && <><span className="text-muted-foreground">Дата выдачи:</span><span>{change.passport_issue_date}</span></>}
+                            {change.passport_issued_by && <><span className="text-muted-foreground">Кем выдан:</span><span>{change.passport_issued_by}</span></>}
+                            {change.company_name && <><span className="text-muted-foreground">Организация:</span><span>{change.company_name}</span></>}
+                            {change.inn && <><span className="text-muted-foreground">ИНН:</span><span>{change.inn}</span></>}
+                            {change.legal_address && <><span className="text-muted-foreground">Адрес:</span><span>{change.legal_address}</span></>}
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            Подано: {new Date(change.submitted_at || '').toLocaleString('ru-RU')}
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              className="flex-1 bg-green-600 hover:bg-green-700"
+                              size="sm"
+                              onClick={async () => {
+                                const res = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=approve-profile-change&change_id=${change.id}&reviewer_email=${currentUser?.email}`, {
+                                  method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{}'
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  setProfileChanges(pc => pc.filter(c => c.id !== change.id));
+                                  toast({ title: 'Изменения применены', description: `Данные пользователя ${change.email} обновлены` });
+                                }
+                              }}
+                            >
+                              <Icon name="Check" size={16} className="mr-1" /> Одобрить
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="flex-1"
+                              onClick={async () => {
+                                const res = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=reject-profile-change&change_id=${change.id}&reviewer_email=${currentUser?.email}`, {
+                                  method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{}'
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  setProfileChanges(pc => pc.filter(c => c.id !== change.id));
+                                  toast({ title: 'Заявка отклонена', description: `Изменения для ${change.email} отклонены` });
+                                }
+                              }}
+                            >
+                              <Icon name="X" size={16} className="mr-1" /> Отклонить
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TabsContent>
           )}
           
@@ -5890,6 +6027,183 @@ export default function Index() {
         </DialogContent>
       </Dialog>
       
+      {/* Profile Dialog */}
+      <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="User" size={20} className="text-primary" />
+              Личные данные
+            </DialogTitle>
+            <DialogDescription>
+              {isEditingProfile ? 'Изменения будут отправлены на проверку администратору' : 'Ваши данные в системе'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {profileChangesPending && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2 text-sm text-amber-800">
+              <Icon name="Clock" size={16} className="shrink-0" />
+              Заявка на изменение данных находится на рассмотрении администратора
+            </div>
+          )}
+
+          <div className="space-y-4 py-2">
+            {/* Общие поля */}
+            <div className="grid gap-2">
+              <Label>ФИО</Label>
+              {isEditingProfile ? (
+                <Input value={profileForm.name || ''} onChange={e => setProfileForm(f => ({...f, name: e.target.value}))} />
+              ) : (
+                <p className="text-sm py-2 px-3 bg-muted rounded-md">{currentUser?.name}</p>
+              )}
+            </div>
+            <div className="grid gap-2">
+              <Label>Email</Label>
+              <p className="text-sm py-2 px-3 bg-muted rounded-md text-muted-foreground">{currentUser?.email}</p>
+            </div>
+            <div className="grid gap-2">
+              <Label>Телефон</Label>
+              {isEditingProfile ? (
+                <Input value={profileForm.phone || ''} onChange={e => setProfileForm(f => ({...f, phone: e.target.value}))} />
+              ) : (
+                <p className="text-sm py-2 px-3 bg-muted rounded-md">{currentUser?.phone}</p>
+              )}
+            </div>
+
+            {/* Поля для физического лица */}
+            {currentUser?.userType === 'individual' && (
+              <>
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground mb-3 uppercase tracking-wide">Паспортные данные</p>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Дата рождения</Label>
+                  {isEditingProfile ? (
+                    <Input type="date" value={profileForm.birthDate || ''} onChange={e => setProfileForm(f => ({...f, birthDate: e.target.value}))} />
+                  ) : (
+                    <p className="text-sm py-2 px-3 bg-muted rounded-md">{currentUser?.birthDate || '—'}</p>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-2">
+                    <Label>Серия паспорта</Label>
+                    {isEditingProfile ? (
+                      <Input value={profileForm.passportSeries || ''} onChange={e => setProfileForm(f => ({...f, passportSeries: e.target.value}))} />
+                    ) : (
+                      <p className="text-sm py-2 px-3 bg-muted rounded-md">{currentUser?.passportSeries || '—'}</p>
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Номер паспорта</Label>
+                    {isEditingProfile ? (
+                      <Input value={profileForm.passportNumber || ''} onChange={e => setProfileForm(f => ({...f, passportNumber: e.target.value}))} />
+                    ) : (
+                      <p className="text-sm py-2 px-3 bg-muted rounded-md">{currentUser?.passportNumber || '—'}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Дата выдачи паспорта</Label>
+                  {isEditingProfile ? (
+                    <Input type="date" value={profileForm.passportIssueDate || ''} onChange={e => setProfileForm(f => ({...f, passportIssueDate: e.target.value}))} />
+                  ) : (
+                    <p className="text-sm py-2 px-3 bg-muted rounded-md">{currentUser?.passportIssueDate || '—'}</p>
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <Label>Кем выдан</Label>
+                  {isEditingProfile ? (
+                    <Input value={profileForm.passportIssuedBy || ''} onChange={e => setProfileForm(f => ({...f, passportIssuedBy: e.target.value}))} />
+                  ) : (
+                    <p className="text-sm py-2 px-3 bg-muted rounded-md">{currentUser?.passportIssuedBy || '—'}</p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Поля для юридического лица */}
+            {currentUser?.userType === 'legal' && (
+              <>
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground mb-3 uppercase tracking-wide">Данные организации</p>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Название организации</Label>
+                  {isEditingProfile ? (
+                    <Input value={profileForm.companyName || ''} onChange={e => setProfileForm(f => ({...f, companyName: e.target.value}))} />
+                  ) : (
+                    <p className="text-sm py-2 px-3 bg-muted rounded-md">{currentUser?.companyName || '—'}</p>
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <Label>ИНН</Label>
+                  {isEditingProfile ? (
+                    <Input value={profileForm.inn || ''} onChange={e => setProfileForm(f => ({...f, inn: e.target.value}))} />
+                  ) : (
+                    <p className="text-sm py-2 px-3 bg-muted rounded-md">{currentUser?.inn || '—'}</p>
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <Label>Юридический адрес</Label>
+                  {isEditingProfile ? (
+                    <Input value={profileForm.legalAddress || ''} onChange={e => setProfileForm(f => ({...f, legalAddress: e.target.value}))} />
+                  ) : (
+                    <p className="text-sm py-2 px-3 bg-muted rounded-md">{currentUser?.legalAddress || '—'}</p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="flex gap-2 justify-end pt-2">
+            {isEditingProfile ? (
+              <>
+                <Button variant="outline" onClick={() => setIsEditingProfile(false)}>Отмена</Button>
+                <Button onClick={async () => {
+                  if (!currentUser?.id) return;
+                  const res = await fetch('https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?action=update-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      user_id: currentUser.id,
+                      name: profileForm.name,
+                      phone: profileForm.phone,
+                      birth_date: profileForm.birthDate || null,
+                      passport_series: profileForm.passportSeries || null,
+                      passport_number: profileForm.passportNumber || null,
+                      passport_issue_date: profileForm.passportIssueDate || null,
+                      passport_issued_by: profileForm.passportIssuedBy || null,
+                      inn: profileForm.inn || null,
+                      company_name: profileForm.companyName || null,
+                      legal_address: profileForm.legalAddress || null,
+                    })
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    setProfileChangesPending(true);
+                    setIsEditingProfile(false);
+                    toast({ title: 'Заявка отправлена', description: 'Изменения отправлены на проверку администратору' });
+                  } else {
+                    toast({ title: 'Ошибка', description: data.error, variant: 'destructive' });
+                  }
+                }}>
+                  <Icon name="Send" size={16} className="mr-2" />
+                  Отправить на проверку
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setIsProfileDialogOpen(false)}>Закрыть</Button>
+                <Button onClick={() => setIsEditingProfile(true)} disabled={profileChangesPending}>
+                  <Icon name="Pencil" size={16} className="mr-2" />
+                  Редактировать
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Send Message Dialog */}
       <Dialog open={isSendMessageDialogOpen} onOpenChange={setIsSendMessageDialogOpen}>
         <DialogContent className="max-w-2xl">

@@ -51,16 +51,24 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     if method == 'GET':
         if path == 'list':
             return handle_list_users(event)
+        elif path == 'list-profile-changes':
+            return handle_list_profile_changes(event)
         else:
             return handle_get_user(event)
     elif method == 'POST':
         if path == 'register':
             return handle_register(event)
+        elif path == 'update-profile':
+            return handle_update_profile(event)
         else:
             return handle_login(event)
     elif method == 'PUT':
         if path == 'approve':
             return handle_approve_user(event)
+        elif path == 'approve-profile-change':
+            return handle_approve_profile_change(event)
+        elif path == 'reject-profile-change':
+            return handle_reject_profile_change(event)
         else:
             return {
                 'statusCode': 400,
@@ -1117,3 +1125,175 @@ def handle_delete_file(event: Dict[str, Any]) -> Dict[str, Any]:
             'body': json.dumps({'error': f'Ошибка удаления файла: {str(e)}'}),
             'isBase64Encoded': False
         }
+
+
+def handle_update_profile(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Сохраняет запрос на изменение профиля — отправляет на модерацию администратору."""
+    body_data = json.loads(event.get('body', '{}'))
+    user_id = body_data.get('user_id')
+    if not user_id:
+        return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'user_id обязателен'}), 'isBase64Encoded': False}
+
+    schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'
+    import psycopg2
+    conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+    cur = conn.cursor()
+
+    # Получаем user_type пользователя
+    cur.execute(f'SELECT user_type FROM {schema}.users WHERE id = %s', (user_id,))
+    row = cur.fetchone()
+    if not row:
+        cur.close(); conn.close()
+        return {'statusCode': 404, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Пользователь не найден'}), 'isBase64Encoded': False}
+    user_type = row[0]
+
+    # Аннулируем предыдущие pending-запросы этого пользователя
+    cur.execute(f"UPDATE {schema}.user_profile_changes SET status='cancelled' WHERE user_id=%s AND status='pending'", (user_id,))
+
+    name = body_data.get('name') or None
+    phone = body_data.get('phone') or None
+
+    if user_type == 'individual':
+        cur.execute(
+            f"""INSERT INTO {schema}.user_profile_changes
+                (user_id, name, phone, birth_date, passport_series, passport_number, passport_issue_date, passport_issued_by, status)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'pending') RETURNING id""",
+            (user_id, name, phone,
+             body_data.get('birth_date') or None, body_data.get('passport_series') or None,
+             body_data.get('passport_number') or None, body_data.get('passport_issue_date') or None,
+             body_data.get('passport_issued_by') or None)
+        )
+    else:
+        cur.execute(
+            f"""INSERT INTO {schema}.user_profile_changes
+                (user_id, name, phone, inn, company_name, legal_address, status)
+                VALUES (%s,%s,%s,%s,%s,%s,'pending') RETURNING id""",
+            (user_id, name, phone,
+             body_data.get('inn') or None, body_data.get('company_name') or None,
+             body_data.get('legal_address') or None)
+        )
+
+    change_id = cur.fetchone()[0]
+    conn.commit(); cur.close(); conn.close()
+
+    return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True, 'change_id': change_id, 'message': 'Заявка на изменение данных отправлена на модерацию'}), 'isBase64Encoded': False}
+
+
+def handle_list_profile_changes(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Возвращает список запросов на изменение профиля для администратора."""
+    schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'
+    import psycopg2
+    conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+    cur = conn.cursor()
+
+    params = event.get('queryStringParameters') or {}
+    status_filter = params.get('status', 'pending')
+
+    cur.execute(
+        f"""SELECT pc.id, pc.user_id, u.email, u.name AS current_name, u.user_type,
+                   pc.name, pc.phone, pc.birth_date, pc.passport_series, pc.passport_number,
+                   pc.passport_issue_date, pc.passport_issued_by, pc.inn, pc.company_name,
+                   pc.legal_address, pc.status, pc.submitted_at, pc.reviewed_at, pc.reviewed_by
+            FROM {schema}.user_profile_changes pc
+            JOIN {schema}.users u ON u.id = pc.user_id
+            WHERE pc.status = %s
+            ORDER BY pc.submitted_at DESC""",
+        (status_filter,)
+    )
+    rows = cur.fetchall()
+    cur.close(); conn.close()
+
+    changes = []
+    for r in rows:
+        changes.append({
+            'id': r[0], 'user_id': r[1], 'email': r[2], 'current_name': r[3], 'user_type': r[4],
+            'name': r[5], 'phone': r[6],
+            'birth_date': r[7].isoformat() if r[7] else None,
+            'passport_series': r[8], 'passport_number': r[9],
+            'passport_issue_date': r[10].isoformat() if r[10] else None,
+            'passport_issued_by': r[11],
+            'inn': r[12], 'company_name': r[13], 'legal_address': r[14],
+            'status': r[15],
+            'submitted_at': r[16].isoformat() if r[16] else None,
+            'reviewed_at': r[17].isoformat() if r[17] else None,
+            'reviewed_by': r[18],
+        })
+
+    return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'changes': changes}), 'isBase64Encoded': False}
+
+
+def handle_approve_profile_change(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Одобряет изменение профиля — применяет данные к пользователю."""
+    params = event.get('queryStringParameters') or {}
+    change_id = params.get('change_id')
+    reviewer = params.get('reviewer_email', 'admin')
+
+    if not change_id:
+        return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'change_id обязателен'}), 'isBase64Encoded': False}
+
+    schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'
+    import psycopg2
+    conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+    cur = conn.cursor()
+
+    cur.execute(
+        f"""SELECT user_id, name, phone, birth_date, passport_series, passport_number,
+                   passport_issue_date, passport_issued_by, inn, company_name, legal_address
+            FROM {schema}.user_profile_changes WHERE id = %s AND status='pending'""",
+        (change_id,)
+    )
+    row = cur.fetchone()
+    if not row:
+        cur.close(); conn.close()
+        return {'statusCode': 404, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Заявка не найдена'}), 'isBase64Encoded': False}
+
+    (user_id, name, phone, birth_date, passport_series, passport_number,
+     passport_issue_date, passport_issued_by, inn, company_name, legal_address) = row
+
+    # Обновляем только переданные поля
+    fields, vals = [], []
+    for col, val in [('name',name),('phone',phone),('birth_date',birth_date),
+                     ('passport_series',passport_series),('passport_number',passport_number),
+                     ('passport_issue_date',passport_issue_date),('passport_issued_by',passport_issued_by),
+                     ('inn',inn),('company_name',company_name),('legal_address',legal_address)]:
+        if val is not None:
+            fields.append(f'{col}=%s')
+            vals.append(val)
+    if fields:
+        vals.append(user_id)
+        cur.execute(f"UPDATE {schema}.users SET {','.join(fields)} WHERE id=%s", vals)
+
+    cur.execute(
+        f"UPDATE {schema}.user_profile_changes SET status='approved', reviewed_at=NOW(), reviewed_by=%s WHERE id=%s",
+        (reviewer, change_id)
+    )
+    conn.commit(); cur.close(); conn.close()
+
+    return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True, 'message': 'Изменения профиля применены'}), 'isBase64Encoded': False}
+
+
+def handle_reject_profile_change(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Отклоняет изменение профиля."""
+    params = event.get('queryStringParameters') or {}
+    change_id = params.get('change_id')
+    reviewer = params.get('reviewer_email', 'admin')
+
+    if not change_id:
+        return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'change_id обязателен'}), 'isBase64Encoded': False}
+
+    schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'
+    import psycopg2
+    conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+    cur = conn.cursor()
+
+    cur.execute(
+        f"UPDATE {schema}.user_profile_changes SET status='rejected', reviewed_at=NOW(), reviewed_by=%s WHERE id=%s AND status='pending' RETURNING id",
+        (reviewer, change_id)
+    )
+    updated = cur.fetchone()
+    conn.commit(); cur.close(); conn.close()
+
+    if not updated:
+        return {'statusCode': 404, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Заявка не найдена'}), 'isBase64Encoded': False}
+
+    return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True, 'message': 'Заявка отклонена'}), 'isBase64Encoded': False}
