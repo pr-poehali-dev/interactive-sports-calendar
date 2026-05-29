@@ -3575,7 +3575,7 @@ export default function Index() {
         )}
 
         <Tabs defaultValue="calendar" className="animate-scale-in bg-slate-50">
-          <TabsList className={`grid w-full max-w-3xl mx-auto ${isAdmin ? 'grid-cols-6' : 'grid-cols-3'} mb-8`}>
+          <TabsList className={`grid w-full max-w-3xl mx-auto ${isAdmin ? 'grid-cols-6' : isLoggedIn && !isAdmin ? 'grid-cols-4' : 'grid-cols-3'} mb-8`}>
             <TabsTrigger value="calendar" className="text-lg">
               <Icon name="CalendarDays" size={18} className="mr-2" />
               Календарь
@@ -3588,6 +3588,15 @@ export default function Index() {
               <Icon name="History" size={18} className="mr-2" />
               Прошедшие
             </TabsTrigger>
+            {isLoggedIn && !isAdmin && (
+              <TabsTrigger value="my-events" className="text-lg relative">
+                <Icon name="Star" size={18} className="mr-2" />
+                Мои
+                {events.filter(e => e.submittedBy === currentUser?.email).length > 0 && (
+                  <Badge className="ml-2 bg-primary">{events.filter(e => e.submittedBy === currentUser?.email).length}</Badge>
+                )}
+              </TabsTrigger>
+            )}
             {isAdmin && (
               <>
                 <TabsTrigger value="pending" className="text-lg relative">
@@ -4988,6 +4997,94 @@ export default function Index() {
               })}
             </div>
           </TabsContent>
+
+          {isLoggedIn && !isAdmin && (
+            <TabsContent value="my-events">
+              {(() => {
+                const myEvents = events.filter(e => e.submittedBy === currentUser?.email);
+                if (myEvents.length === 0) {
+                  return (
+                    <Card className="text-center py-16 border-2 border-dashed">
+                      <CardContent>
+                        <Icon name="Star" size={48} className="mx-auto text-muted-foreground mb-4" />
+                        <p className="text-xl font-semibold text-muted-foreground">У вас пока нет мероприятий</p>
+                        <p className="text-sm text-muted-foreground mt-2">Подайте заявку на добавление мероприятия</p>
+                      </CardContent>
+                    </Card>
+                  );
+                }
+                return (
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {myEvents.map((event, index) => {
+                      const docStatus = event.approved ? getDocumentStatus(event) : null;
+                      const statusColors = { red: 'bg-red-500', yellow: 'bg-yellow-500', blue: 'bg-blue-500', green: 'bg-green-500' };
+                      const statusText = { red: 'Основные документы не загружены', yellow: 'Требуются протоколы', blue: 'Требуются медиафайлы', green: 'Все документы загружены' };
+                      return (
+                        <Card
+                          key={event.id}
+                          className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary animate-fade-in relative"
+                          style={{ animationDelay: `${index * 100}ms` }}
+                        >
+                          {docStatus && (
+                            <div className={`absolute top-3 right-3 w-3 h-3 rounded-full ${statusColors[docStatus]} z-10`} title={statusText[docStatus]} />
+                          )}
+                          <CardHeader>
+                            <div className="flex items-start justify-between mb-2">
+                              <Badge variant="default" className="bg-gradient-to-r from-primary to-secondary text-white">
+                                <Icon name={sportIcons[event.sport]} size={14} className="mr-1" />
+                                {sportNames[event.sport]}
+                              </Badge>
+                              <Badge variant={event.approved ? 'default' : 'outline'} className={event.approved ? 'bg-green-600' : 'border-amber-500 text-amber-700'}>
+                                {event.approved ? 'Одобрено' : 'На проверке'}
+                              </Badge>
+                            </div>
+                            <CardTitle className="text-xl leading-tight">{event.title}</CardTitle>
+                            {event.eventNumber && (
+                              <div className="flex items-center gap-1 text-xs font-semibold text-primary mt-1">
+                                <Icon name="Hash" size={13} />
+                                {event.eventNumber}
+                              </div>
+                            )}
+                            <CardDescription className="flex flex-col gap-1 mt-2">
+                              <div className="flex items-center gap-2">
+                                <Icon name="Clock" size={16} />
+                                {new Date(event.date).toLocaleDateString('ru-RU')} в {event.time}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Icon name="MapPin" size={16} />
+                                {event.location}
+                              </div>
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+                                  onClick={() => setSelectedEvent(event)}
+                                >
+                                  <Icon name="Info" size={18} className="mr-2" />
+                                  Подробнее
+                                </Button>
+                              </DialogTrigger>
+                            </Dialog>
+                            <Button
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => { setManageFilesEvent(event); setIsManageFilesDialogOpen(true); }}
+                            >
+                              <Icon name="Upload" size={16} className="mr-2" />
+                              Управление файлами
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </TabsContent>
+          )}
 
           {isAdmin && (
             <TabsContent value="pending">
