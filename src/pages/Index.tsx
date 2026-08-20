@@ -47,6 +47,8 @@ interface RequiredDocument {
   fileName?: string;
 }
 
+type EventCategory = 'competition' | 'mass_sport' | 'training';
+
 interface Event {
   id: number;
   eventNumber?: string;
@@ -55,6 +57,7 @@ interface Event {
   time: string;
   location: string;
   eventType?: 'local' | 'away';
+  eventCategory?: EventCategory;
   eventLevel?: EventLevel;
   sport: SportType;
   participants: number;
@@ -78,6 +81,18 @@ interface Event {
   requiredDocuments?: RequiredDocument[];
   additionalDates?: string[];
 }
+
+const eventCategoryNames: Record<EventCategory, string> = {
+  competition: 'Спортивные соревнования',
+  mass_sport: 'Физкультурно-массовое мероприятие',
+  training: 'Открытые занятия/тренировки'
+};
+
+const eventCategoryIcons: Record<EventCategory, string> = {
+  competition: 'Trophy',
+  mass_sport: 'Users',
+  training: 'Dumbbell'
+};
 
 const eventLevelNames: Record<EventLevel, string> = {
   municipal: 'Муниципальное',
@@ -486,6 +501,7 @@ export default function Index() {
     time: '',
     location: '',
     sport: 'running',
+    eventCategory: 'competition',
     eventLevel: 'municipal',
     description: '',
     organizer: '',
@@ -547,6 +563,7 @@ export default function Index() {
           ...e,
           eventNumber: e.event_number,
           eventType: e.event_type,
+          eventCategory: e.event_category,
           eventLevel: e.event_level,
           maxParticipants: e.max_participants,
           maxSpectators: e.max_spectators,
@@ -718,6 +735,7 @@ export default function Index() {
       time: newEvent.time,
       location: newEvent.location,
       event_type: eventType,
+      event_category: newEvent.eventCategory,
       event_level: newEvent.eventLevel,
       sport: (showCustomSportInput ? 'all' : newEvent.sport) as SportType,
       description: newEvent.description || '',
@@ -793,6 +811,7 @@ export default function Index() {
       time: '',
       location: '',
       sport: 'running',
+      eventCategory: 'competition',
       eventLevel: 'municipal',
       description: '',
       organizer: '',
@@ -991,6 +1010,7 @@ export default function Index() {
       location: event.location,
       sport: event.sport,
       eventType: event.eventType,
+      eventCategory: event.eventCategory,
       eventLevel: event.eventLevel,
       description: event.description,
       organizer: event.organizer,
@@ -1058,6 +1078,7 @@ export default function Index() {
       time: newEvent.time,
       location: newEvent.location,
       event_type: eventType,
+      event_category: newEvent.eventCategory,
       event_level: newEvent.eventLevel,
       sport: newEvent.sport,
       description: newEvent.description || '',
@@ -1092,6 +1113,7 @@ export default function Index() {
         time: '',
         location: '',
         sport: 'running',
+        eventCategory: 'competition',
         eventLevel: 'municipal',
         description: '',
         organizer: '',
@@ -2747,6 +2769,24 @@ export default function Index() {
               
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
+                  <Label>Тип мероприятия *</Label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {(Object.keys(eventCategoryNames) as EventCategory[]).map((key) => (
+                      <Button
+                        key={key}
+                        type="button"
+                        variant={newEvent.eventCategory === key ? 'default' : 'outline'}
+                        className="justify-start"
+                        onClick={() => setNewEvent({...newEvent, eventCategory: key})}
+                      >
+                        <Icon name={eventCategoryIcons[key]} size={16} className="mr-2" />
+                        {eventCategoryNames[key]}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
                   <Label htmlFor="title">Название мероприятия *</Label>
                   <Input
                     id="title"
@@ -3199,6 +3239,24 @@ export default function Index() {
               </DialogHeader>
               
               <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label>Тип мероприятия *</Label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {(Object.keys(eventCategoryNames) as EventCategory[]).map((key) => (
+                      <Button
+                        key={key}
+                        type="button"
+                        variant={newEvent.eventCategory === key ? 'default' : 'outline'}
+                        className="justify-start"
+                        onClick={() => setNewEvent({...newEvent, eventCategory: key})}
+                      >
+                        <Icon name={eventCategoryIcons[key]} size={16} className="mr-2" />
+                        {eventCategoryNames[key]}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="grid gap-2">
                   <Label htmlFor="edit-title">Название мероприятия *</Label>
                   <Input

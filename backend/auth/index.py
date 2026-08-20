@@ -579,14 +579,16 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
         additional_dates = additional_dates_list if additional_dates_list else None
         additional_dates_sql = "ARRAY[" + ",".join(f"'{d}'::date" for d in additional_dates_list) + "]::date[]" if additional_dates_list else "NULL::date[]"
 
+        event_category = body_data.get('event_category')
+
         cur.execute(f'''
             INSERT INTO events (
-                event_number, title, date, time, location, event_type, 
+                event_number, title, date, time, location, event_type, event_category,
                 event_level, sport, description, organizer, responsible_person,
                 responsible_position, responsible_phone, max_participants, 
                 max_spectators, participants, status, approved, submitted_by,
                 additional_dates
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, {additional_dates_sql})
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, {additional_dates_sql})
             RETURNING id
         ''', (
             event_number,
@@ -595,6 +597,7 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
             body_data.get('time'),
             body_data.get('location'),
             event_type,
+            event_category,
             event_level,
             body_data.get('sport'),
             body_data.get('description'),
@@ -810,6 +813,7 @@ def handle_update_event(event: Dict[str, Any]) -> Dict[str, Any]:
                 time = %s,
                 location = %s,
                 event_type = %s,
+                event_category = %s,
                 event_level = %s,
                 sport = %s,
                 description = %s,
@@ -828,6 +832,7 @@ def handle_update_event(event: Dict[str, Any]) -> Dict[str, Any]:
             body_data.get('time'),
             body_data.get('location'),
             body_data.get('event_type'),
+            body_data.get('event_category'),
             body_data.get('event_level'),
             body_data.get('sport'),
             body_data.get('description'),

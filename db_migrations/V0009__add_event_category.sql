@@ -1,0 +1,1 @@
+ALTER TABLE t_p20079682_interactive_sports_c.events ADD COLUMN event_category VARCHAR(30);
