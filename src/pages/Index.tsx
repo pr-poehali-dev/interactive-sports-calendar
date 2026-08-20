@@ -2214,7 +2214,9 @@ export default function Index() {
       for (const eventId of eventIdsToDelete) {
         try {
           const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=delete&event_id=${eventId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requester_email: currentUser?.email, is_admin: true })
           });
           
           if (response.ok) {
