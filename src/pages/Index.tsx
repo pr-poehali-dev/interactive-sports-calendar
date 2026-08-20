@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
+import QRCode from 'qrcode';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -1001,12 +1002,21 @@ export default function Index() {
     }
   };
   
-  const handlePrintCertificate = (event: Event) => {
+  const handlePrintCertificate = async (event: Event) => {
     const categoryNames: Record<string, string> = {
       competition: 'Спортивные соревнования',
       mass_sport: 'Физкультурно-массовое мероприятие',
       training: 'Открытые занятия/тренировки'
     };
+
+    const verifyPayload = `Единый календарный план м.о. Истра\nМероприятие: ${event.title}\n№ ${event.eventNumber || 'б/н'}\nДата: ${event.date}\nМесто: ${event.location}\nID: ${event.id}\nСформировано: ${new Date().toISOString()}`;
+    let qrDataUrl = '';
+    try {
+      qrDataUrl = await QRCode.toDataURL(verifyPayload, { width: 160, margin: 1 });
+    } catch {
+      qrDataUrl = '';
+    }
+
     const win = window.open('', '_blank');
     if (!win) return;
 
@@ -1022,7 +1032,9 @@ export default function Index() {
         <title>Справка о мероприятии ${event.eventNumber || ''}</title>
         <style>
           body { font-family: 'Times New Roman', serif; padding: 40px 60px; color: #1a1a1a; line-height: 1.6; }
-          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1a1a1a; padding-bottom: 20px; }
+          .header { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; border-bottom: 2px solid #1a1a1a; padding-bottom: 20px; }
+          .header img.emblem { width: 64px; height: 64px; object-fit: contain; flex-shrink: 0; }
+          .header-text { text-align: center; flex: 1; }
           .header h1 { font-size: 20px; margin: 0 0 6px; }
           .header p { margin: 0; font-size: 14px; color: #444; }
           .number { text-align: right; font-size: 14px; margin-bottom: 20px; }
@@ -1030,15 +1042,20 @@ export default function Index() {
           table { width: 100%; border-collapse: collapse; margin-top: 16px; }
           td { padding: 10px 8px; border-bottom: 1px solid #ddd; vertical-align: top; font-size: 14px; }
           td.label { width: 260px; font-weight: bold; color: #333; }
-          .footer { margin-top: 60px; display: flex; justify-content: space-between; font-size: 14px; }
+          .footer { margin-top: 60px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 14px; }
           .signature { border-top: 1px solid #1a1a1a; width: 260px; margin-top: 40px; padding-top: 6px; text-align: center; }
+          .qr-block { text-align: center; font-size: 11px; color: #555; }
+          .qr-block img { width: 110px; height: 110px; display: block; margin: 0 auto 6px; }
           @media print { body { padding: 20px 40px; } }
         </style>
       </head>
       <body>
         <div class="header">
-          <h1>Единый календарный план м.о. Истра</h1>
-          <p>Управление физической культуры и спорта м.о. Истра</p>
+          <img class="emblem" src="${window.location.origin}/istra-emblem.png" alt="Герб м.о. Истра" />
+          <div class="header-text">
+            <h1>Единый календарный план м.о. Истра</h1>
+            <p>Управление физической культуры и спорта м.о. Истра</p>
+          </div>
         </div>
 
         <div class="number">Официальная справка ${event.eventNumber ? `№ ${event.eventNumber}` : ''}</div>
@@ -1063,6 +1080,12 @@ export default function Index() {
           <div>
             <div class="signature">Подпись ответственного лица</div>
           </div>
+          ${qrDataUrl ? `
+          <div class="qr-block">
+            <img src="${qrDataUrl}" alt="QR-код подтверждения подлинности" />
+            Сканируйте для проверки<br />подлинности документа
+          </div>
+          ` : ''}
           <div>
             <div class="signature">М.П.</div>
           </div>
@@ -1074,7 +1097,7 @@ export default function Index() {
     `);
     win.document.close();
     win.focus();
-    setTimeout(() => win.print(), 300);
+    setTimeout(() => win.print(), 500);
   };
 
   const handleEditEvent = (event: Event) => {
