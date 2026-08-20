@@ -550,13 +550,42 @@ def handle_list_events(event: Dict[str, Any]) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
 
+EVENT_NUMBER_PREFIXES = {
+    'competition': 'СС',
+    'mass_sport': 'ФМ',
+    'training': 'ОТ'
+}
+
+
+def generate_event_number(cur, schema: str, event_date: str, event_category: str) -> str:
+    """Формирует уникальный номер мероприятия с отдельной нумерацией по типу мероприятия."""
+    from datetime import datetime
+    year = datetime.strptime(str(event_date), '%Y-%m-%d').year
+    prefix = EVENT_NUMBER_PREFIXES.get(event_category, 'МО')
+
+    if event_category in EVENT_NUMBER_PREFIXES:
+        cur.execute(
+            f'''SELECT COUNT(*) FROM {schema}.events
+                WHERE approved = TRUE AND EXTRACT(YEAR FROM date) = %s AND event_category = %s''',
+            (year, event_category)
+        )
+    else:
+        cur.execute(
+            f'''SELECT COUNT(*) FROM {schema}.events
+                WHERE approved = TRUE AND EXTRACT(YEAR FROM date) = %s AND event_category IS NULL''',
+            (year,)
+        )
+    count = cur.fetchone()[0]
+    return f'{prefix}-{year}-{str(count + 1).zfill(3)}'
+
+
 def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
     body_data = json.loads(event.get('body', '{}'))
     
     try:
         import psycopg2
-        from datetime import datetime
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+        schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'
         cur = conn.cursor()
         
         approved = body_data.get('approved', False)
@@ -564,22 +593,15 @@ def handle_create_event(event: Dict[str, Any]) -> Dict[str, Any]:
         event_level = body_data.get('event_level')
         event_date = body_data.get('date')
         event_number = body_data.get('event_number')
+        event_category = body_data.get('event_category')
         
         if approved and not event_number:
-            year = datetime.strptime(str(event_date), '%Y-%m-%d').year
-            cur.execute('''
-                SELECT COUNT(*) FROM events 
-                WHERE approved = TRUE AND EXTRACT(YEAR FROM date) = %s
-            ''', (year,))
-            approved_count = cur.fetchone()[0]
-            event_number = f'МО-{year}-{str(approved_count + 1).zfill(3)}'
+            event_number = generate_event_number(cur, schema, event_date, event_category)
         
         additional_dates_raw = body_data.get('additional_dates', []) or []
         additional_dates_list = [d for d in additional_dates_raw if d]
         additional_dates = additional_dates_list if additional_dates_list else None
         additional_dates_sql = "ARRAY[" + ",".join(f"'{d}'::date" for d in additional_dates_list) + "]::date[]" if additional_dates_list else "NULL::date[]"
-
-        event_category = body_data.get('event_category')
 
         cur.execute(f'''
             INSERT INTO events (
@@ -664,13 +686,13 @@ def handle_approve_event(event: Dict[str, Any]) -> Dict[str, Any]:
     
     try:
         import psycopg2
-        from datetime import datetime
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+        schema = os.environ.get('MAIN_DB_SCHEMA') or 't_p20079682_interactive_sports_c'
         cur = conn.cursor()
         
-        cur.execute('''
-            SELECT title, date, event_type, event_level, submitted_by 
-            FROM events 
+        cur.execute(f'''
+            SELECT title, date, event_type, event_level, submitted_by, event_category, event_number
+            FROM {schema}.events 
             WHERE id = %s
         ''', (event_id,))
         event_data = cur.fetchone()
@@ -685,23 +707,13 @@ def handle_approve_event(event: Dict[str, Any]) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-        title, event_date, event_type, event_level, submitted_by = event_data
-        year = datetime.strptime(str(event_date), '%Y-%m-%d').year
+        title, event_date, event_type, event_level, submitted_by, event_category, existing_number = event_data
         
-        cur.execute('''
-            SELECT COUNT(*) FROM events 
-            WHERE approved = TRUE AND EXTRACT(YEAR FROM date) = %s
-        ''', (year,))
-        approved_count = cur.fetchone()[0]
+        event_number = existing_number
+        if not event_number:
+            event_number = generate_event_number(cur, schema, str(event_date), event_category)
         
-        event_number = None
-        if event_type == 'local' and event_level in ('municipal', 'intermunicipal'):
-            event_number = f'МО-{year}-{str(approved_count + 1).zfill(3)}'
-        
-        if event_number:
-            cur.execute('UPDATE events SET approved = TRUE, event_number = %s WHERE id = %s', (event_number, event_id))
-        else:
-            cur.execute('UPDATE events SET approved = TRUE WHERE id = %s', (event_id,))
+        cur.execute(f'UPDATE {schema}.events SET approved = TRUE, event_number = %s WHERE id = %s', (event_number, event_id))
         
         cur.execute('''
             INSERT INTO event_required_documents (event_id, doc_type, doc_name, uploaded)
