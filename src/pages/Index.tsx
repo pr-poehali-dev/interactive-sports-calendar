@@ -874,7 +874,9 @@ export default function Index() {
     
     try {
       const response = await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&event_id=${eventId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requester_email: currentUser?.email || null, is_admin: isAdmin })
       });
       
       if (!response.ok) {
@@ -1810,7 +1812,26 @@ export default function Index() {
       await fetch(`https://functions.poehali.dev/81518783-b8d7-4699-a43b-cbae1cb085ba?resource=events&action=update&event_id=${eventId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...event, status: newStatus })
+        body: JSON.stringify({
+          event_number: event.eventNumber,
+          title: event.title,
+          date: event.date,
+          time: event.time,
+          location: event.location,
+          event_type: event.eventType,
+          event_category: event.eventCategory,
+          event_level: event.eventLevel,
+          sport: event.sport,
+          description: event.description,
+          organizer: event.organizer,
+          max_participants: event.maxParticipants,
+          max_spectators: event.maxSpectators,
+          participants: event.participants,
+          result: event.result,
+          status: newStatus,
+          requester_email: currentUser?.email || null,
+          is_admin: isAdmin
+        })
       });
       
       toast({
