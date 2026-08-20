@@ -1001,6 +1001,82 @@ export default function Index() {
     }
   };
   
+  const handlePrintCertificate = (event: Event) => {
+    const categoryNames: Record<string, string> = {
+      competition: 'Спортивные соревнования',
+      mass_sport: 'Физкультурно-массовое мероприятие',
+      training: 'Открытые занятия/тренировки'
+    };
+    const win = window.open('', '_blank');
+    if (!win) return;
+
+    const allDates = [event.date, ...(event.additionalDates || [])]
+      .map(d => new Date(d).toLocaleDateString('ru-RU'))
+      .join(', ');
+
+    win.document.write(`
+      <!DOCTYPE html>
+      <html lang="ru">
+      <head>
+        <meta charset="UTF-8">
+        <title>Справка о мероприятии ${event.eventNumber || ''}</title>
+        <style>
+          body { font-family: 'Times New Roman', serif; padding: 40px 60px; color: #1a1a1a; line-height: 1.6; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1a1a1a; padding-bottom: 20px; }
+          .header h1 { font-size: 20px; margin: 0 0 6px; }
+          .header p { margin: 0; font-size: 14px; color: #444; }
+          .number { text-align: right; font-size: 14px; margin-bottom: 20px; }
+          .title { text-align: center; font-size: 18px; font-weight: bold; margin: 24px 0; text-transform: uppercase; }
+          table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+          td { padding: 10px 8px; border-bottom: 1px solid #ddd; vertical-align: top; font-size: 14px; }
+          td.label { width: 260px; font-weight: bold; color: #333; }
+          .footer { margin-top: 60px; display: flex; justify-content: space-between; font-size: 14px; }
+          .signature { border-top: 1px solid #1a1a1a; width: 260px; margin-top: 40px; padding-top: 6px; text-align: center; }
+          @media print { body { padding: 20px 40px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Единый календарный план м.о. Истра</h1>
+          <p>Управление физической культуры и спорта м.о. Истра</p>
+        </div>
+
+        <div class="number">Официальная справка ${event.eventNumber ? `№ ${event.eventNumber}` : ''}</div>
+
+        <div class="title">${event.title}</div>
+
+        <table>
+          ${event.eventNumber ? `<tr><td class="label">Номер мероприятия</td><td>${event.eventNumber}</td></tr>` : ''}
+          ${event.eventCategory ? `<tr><td class="label">Тип мероприятия</td><td>${categoryNames[event.eventCategory] || event.eventCategory}</td></tr>` : ''}
+          ${event.eventLevel ? `<tr><td class="label">Статус</td><td>${eventLevelNames[event.eventLevel]}</td></tr>` : ''}
+          <tr><td class="label">Вид спорта</td><td>${sportNames[event.sport] || event.sport}</td></tr>
+          <tr><td class="label">Дата и время проведения</td><td>${allDates} в ${event.time}</td></tr>
+          <tr><td class="label">Место проведения</td><td>${event.location}</td></tr>
+          <tr><td class="label">Организатор</td><td>${event.organizer}</td></tr>
+          ${event.responsiblePerson ? `<tr><td class="label">Ответственное лицо</td><td>${event.responsiblePerson}${event.responsiblePosition ? `, ${event.responsiblePosition}` : ''}</td></tr>` : ''}
+          ${event.responsiblePhone ? `<tr><td class="label">Контактный телефон</td><td>${event.responsiblePhone}</td></tr>` : ''}
+          ${event.maxParticipants ? `<tr><td class="label">Количество участников</td><td>${event.maxParticipants}</td></tr>` : ''}
+          ${event.description ? `<tr><td class="label">Описание</td><td>${event.description}</td></tr>` : ''}
+        </table>
+
+        <div class="footer">
+          <div>
+            <div class="signature">Подпись ответственного лица</div>
+          </div>
+          <div>
+            <div class="signature">М.П.</div>
+          </div>
+        </div>
+
+        <p style="margin-top:40px; font-size:12px; color:#888;">Справка сформирована автоматически ${new Date().toLocaleDateString('ru-RU')} на основании данных Единого календарного плана м.о. Истра</p>
+      </body>
+      </html>
+    `);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 300);
+  };
+
   const handleEditEvent = (event: Event) => {
     setEditingEvent(event);
     setNewEvent({
@@ -3868,6 +3944,15 @@ export default function Index() {
                                   </div>
                                 </DialogDescription>
                               </DialogHeader>
+
+                              <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => handlePrintCertificate(event)}
+                              >
+                                <Icon name="FileDown" size={16} className="mr-2" />
+                                Скачать / Печать справки
+                              </Button>
                               
                               {event.requiredDocuments && event.requiredDocuments.length > 0 && (
                                 <div className="pt-4 border-t">
@@ -4312,6 +4397,16 @@ export default function Index() {
                             </div>
                           </DialogDescription>
                         </DialogHeader>
+
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => handlePrintCertificate(event)}
+                        >
+                          <Icon name="FileDown" size={16} className="mr-2" />
+                          Скачать / Печать справки
+                        </Button>
+
                         {event.documents && event.documents.length > 0 && (
                           <div className="pt-4 border-t">
                             <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -4699,6 +4794,15 @@ export default function Index() {
                             </div>
                           </DialogDescription>
                         </DialogHeader>
+
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => handlePrintCertificate(event)}
+                        >
+                          <Icon name="FileDown" size={16} className="mr-2" />
+                          Скачать / Печать справки
+                        </Button>
                         
                         {event.media && event.media.length > 0 && (
                           <div className="pt-4 border-t">
@@ -5115,17 +5219,13 @@ export default function Index() {
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-2">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
-                                  onClick={() => setSelectedEvent(event)}
-                                >
-                                  <Icon name="Info" size={18} className="mr-2" />
-                                  Подробнее
-                                </Button>
-                              </DialogTrigger>
-                            </Dialog>
+                            <Button
+                              className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+                              onClick={() => handlePrintCertificate(event)}
+                            >
+                              <Icon name="FileDown" size={18} className="mr-2" />
+                              Скачать / Печать справки
+                            </Button>
                             <div className="grid grid-cols-3 gap-2">
                               <Button
                                 variant="outline"
