@@ -2843,6 +2843,31 @@ export default function Index() {
                     alt="Школьная Лига Истра"
                     className="h-24 w-auto object-contain"
                   />
+                  <img 
+                    src="https://cdn.poehali.dev/projects/7867f842-bbad-4ff0-83bb-b1a44cc1c5c5/bucket/be619190-ceb2-4cd8-af78-8ad7238f2d9c.png" 
+                    alt="Стадион Глебовец"
+                    className="h-24 w-auto object-contain"
+                  />
+                  <img 
+                    src="https://cdn.poehali.dev/projects/7867f842-bbad-4ff0-83bb-b1a44cc1c5c5/bucket/77b0d8c7-0503-4e0d-b3bb-2f094d1cabfc.jpg" 
+                    alt="Федерация самбо г.о. Истра"
+                    className="h-24 w-auto object-contain"
+                  />
+                  <img 
+                    src="https://cdn.poehali.dev/projects/7867f842-bbad-4ff0-83bb-b1a44cc1c5c5/bucket/537b89cc-abaa-4eff-8266-5d12dbf027fb.jpg" 
+                    alt="Спортивный фонд Хорс"
+                    className="h-24 w-auto object-contain"
+                  />
+                  <img 
+                    src="https://cdn.poehali.dev/projects/7867f842-bbad-4ff0-83bb-b1a44cc1c5c5/bucket/65344a55-adc4-4ee7-a311-2c80c972ea89.jpeg" 
+                    alt="СК Гучково"
+                    className="h-24 w-auto object-contain"
+                  />
+                  <img 
+                    src="https://cdn.poehali.dev/projects/7867f842-bbad-4ff0-83bb-b1a44cc1c5c5/bucket/bd57446e-e939-44d2-aba0-42e9d22e7e12.jpeg" 
+                    alt="Арена Истра"
+                    className="h-24 w-auto object-contain"
+                  />
                 </div>
               ))}
             </div>
