@@ -2814,32 +2814,38 @@ export default function Index() {
         </div>
         
         <header className="text-center mb-12 mt-20 animate-fade-in">
-          <div className="flex items-center justify-center gap-6 mb-6">
-            <img 
-              src="https://cdn.poehali.dev/files/70c7c537-7bd0-406b-907d-dc090e56ba00.png" 
-              alt="Герб муниципального округа Истра"
-              className="h-24 w-auto object-contain"
-            />
-            <img 
-              src="https://cdn.poehali.dev/files/4f1ca257-0059-45f5-9da9-0e74c73d16fb.png" 
-              alt="ГТО - Территория спорта"
-              className="h-24 w-auto object-contain"
-            />
-            <img 
-              src="https://cdn.poehali.dev/files/5171b1ba-a553-4f60-9a44-3c3364d0c883.jpg" 
-              alt="Мособлспорт"
-              className="h-24 w-auto object-contain"
-            />
-            <img 
-              src="https://cdn.poehali.dev/files/IMG_9203.jpg" 
-              alt="Спорт Истра"
-              className="h-24 w-auto object-contain"
-            />
-            <img 
-              src="https://cdn.poehali.dev/projects/7867f842-bbad-4ff0-83bb-b1a44cc1c5c5/bucket/b91abbfc-231c-4b1d-84c8-5997700d5b5a.jpg" 
-              alt="Школьная Лига Истра"
-              className="h-24 w-auto object-contain"
-            />
+          <div className="mb-6 overflow-hidden group [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)]">
+            <div className="flex w-max animate-marquee group-hover:[animation-play-state:paused]">
+              {[0, 1].map((copy) => (
+                <div key={copy} className="flex items-center gap-6 pr-6" aria-hidden={copy === 1}>
+                  <img 
+                    src="https://cdn.poehali.dev/files/70c7c537-7bd0-406b-907d-dc090e56ba00.png" 
+                    alt="Герб муниципального округа Истра"
+                    className="h-24 w-auto object-contain"
+                  />
+                  <img 
+                    src="https://cdn.poehali.dev/files/4f1ca257-0059-45f5-9da9-0e74c73d16fb.png" 
+                    alt="ГТО - Территория спорта"
+                    className="h-24 w-auto object-contain"
+                  />
+                  <img 
+                    src="https://cdn.poehali.dev/files/5171b1ba-a553-4f60-9a44-3c3364d0c883.jpg" 
+                    alt="Мособлспорт"
+                    className="h-24 w-auto object-contain"
+                  />
+                  <img 
+                    src="https://cdn.poehali.dev/files/IMG_9203.jpg" 
+                    alt="Спорт Истра"
+                    className="h-24 w-auto object-contain"
+                  />
+                  <img 
+                    src="https://cdn.poehali.dev/projects/7867f842-bbad-4ff0-83bb-b1a44cc1c5c5/bucket/b91abbfc-231c-4b1d-84c8-5997700d5b5a.jpg" 
+                    alt="Школьная Лига Истра"
+                    className="h-24 w-auto object-contain"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
           <div className="flex items-center justify-center gap-3 mb-4">
             <Icon name="Trophy" size={48} className="text-yellow-500" />
